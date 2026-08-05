@@ -1,0 +1,6 @@
+{
+  "name": "Informatique System Prosper",
+  "description": "Plateforme e-commerce d'équipements informatiques, matériel, maintenance et services réseau avec administration avancée.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
