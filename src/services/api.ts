@@ -17,6 +17,33 @@ export const api = {
     }
   },
 
+  // Authentication
+  async login(email: string, password?: string): Promise<{ user: User; token: string }> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Erreur lors de la connexion' }));
+      throw new Error(errData.error || 'Identifiants invalides');
+    }
+    return await res.json();
+  },
+
+  async register(userData: { nom: string; email: string; password?: string; role?: string }): Promise<{ user: User; token: string }> {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Erreur lors de l\'inscription' }));
+      throw new Error(errData.error || 'Erreur lors de la création de compte');
+    }
+    return await res.json();
+  },
+
   // Stats
   async getDashboardStats(): Promise<DashboardStats> {
     try {

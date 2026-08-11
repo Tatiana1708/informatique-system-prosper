@@ -13,8 +13,12 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Commande } from '../types';
 
-export const UserAccountPage: React.FC = () => {
-  const { currentUser, currentRole } = useAuth();
+interface UserAccountPageProps {
+  setActiveTab?: (tab: string) => void;
+}
+
+export const UserAccountPage: React.FC<UserAccountPageProps> = ({ setActiveTab }) => {
+  const { currentUser, currentRole, isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<Commande[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,8 +33,42 @@ export const UserAccountPage: React.FC = () => {
         setLoading(false);
       }
     }
-    loadUserOrders();
-  }, []);
+    if (isAuthenticated) {
+      loadUserOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16 text-center space-y-6">
+        <div className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+          <UserIcon className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-extrabold text-slate-900">Espace Client non connecté</h1>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Veuillez vous connecter à votre compte Informatique System Prosper ou créer un nouveau compte pour suivre vos commandes.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => setActiveTab?.('login')}
+            className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-blue-500/20 transition"
+          >
+            Se connecter
+          </button>
+          <button
+            onClick={() => setActiveTab?.('register')}
+            className="w-full sm:w-auto px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+          >
+            Créer un compte
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">

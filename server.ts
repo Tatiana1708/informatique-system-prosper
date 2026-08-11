@@ -320,14 +320,114 @@ async function startServer() {
     res.json(order);
   });
 
-  // Authentication endpoint mock
-  app.post('/api/auth/login', (req, res) => {
-    const { email } = req.body;
-    const user = usersStore.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) {
-      return res.status(401).json({ error: 'Identifiants invalides' });
+  // Authentication endpoints
+  app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'L\'adresse e-mail est requise' });
     }
-    res.json({ user, token: `mock-jwt-token-${user.id}` });
+
+    let user: User | undefined;
+
+    // Check MySQL if connected
+    const pool = getMySQLPool();
+    if (pool) {
+      try {
+        const [rows]: any = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+        if (rows && rows.length > 0) {
+          const u = rows[0];
+          user = {
+            id: u.id,
+            nom: u.nom,
+            email: u.email,
+            role: u.role,
+            statut: u.statut,
+            dateInscription: u.date_inscription,
+          };
+        }
+      } catch (err) {
+        console.error('[MySQL Login Error]', err);
+      }
+    }
+
+    // Fallback to memory store if not found in MySQL or MySQL disabled
+    if (!user) {
+      user = usersStore.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
+    }
+
+    if (!user) {
+      return res.status(401).json({ error: 'Aucun compte associé à cette adresse e-mail' });
+    }
+
+    res.json({
+      user,
+      token: `jwt-isp-session-${user.id}-${Date.now()}`,
+      message: 'Connexion réussie',
+    });
+  });
+
+  app.post('/api/auth/register', async (req, res) => {
+    const { nom, email, password, role } = req.body;
+
+    if (!nom || !email) {
+      return res.status(400).json({ error: 'Le nom et l\'adresse e-mail sont obligatoires' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check duplicate in memory or DB
+    const existing = usersStore.find((u) => u.email.toLowerCase() === cleanEmail);
+    if (existing) {
+      return res.status(400).json({ error: 'Un compte existe déjà avec cette adresse e-mail' });
+    }
+
+    const newUser: User = {
+      id: 'u-' + Date.now(),
+      nom: nom.trim(),
+      email: cleanEmail,
+      role: role && ['Admin', 'Vendeur', 'Client'].includes(role) ? role : 'Client',
+      statut: 'Actif',
+      dateInscription: new Date().toISOString().split('T')[0],
+    };
+
+    // Save in memory
+    usersStore.unshift(newUser);
+
+    if (newUser.role === 'Client') {
+      clientsStore.unshift({
+        id: 'c-' + Date.now(),
+        userId: newUser.id,
+        nombreCommandes: 0,
+        totalDepense: 0,
+        statut: 'Nouveau',
+        user: newUser,
+      });
+    }
+
+    // Save in MySQL if connected
+    const pool = getMySQLPool();
+    if (pool) {
+      try {
+        await pool.query(
+          'INSERT INTO users (id, nom, email, role, statut, date_inscription) VALUES (?, ?, ?, ?, ?, ?)',
+          [newUser.id, newUser.nom, newUser.email, newUser.role, newUser.statut, newUser.dateInscription]
+        );
+        if (newUser.role === 'Client') {
+          await pool.query(
+            'INSERT INTO clients (id, user_id, nombre_commandes, total_depense, statut) VALUES (?, ?, 0, 0, ?)',
+            ['c-' + Date.now(), newUser.id, 'Nouveau']
+          );
+        }
+      } catch (err) {
+        console.error('[MySQL Register Error]', err);
+      }
+    }
+
+    res.status(201).json({
+      user: newUser,
+      token: `jwt-isp-session-${newUser.id}-${Date.now()}`,
+      message: 'Inscription réussie',
+    });
   });
 
   // Vite middleware for dev / static in prod

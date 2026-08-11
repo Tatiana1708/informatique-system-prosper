@@ -17,6 +17,8 @@ import { ContactPage } from './pages/ContactPage';
 import { HomePage } from './pages/HomePage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { ProductsPage } from './pages/ProductsPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { UserAccountPage } from './pages/UserAccountPage';
 import { api } from './services/api';
 import { Categorie, Produit } from './types';
@@ -183,7 +185,11 @@ function MainAppContent() {
 
         {activeTab === 'panier' && <CartPage setActiveTab={setActiveTab} />}
 
-        {activeTab === 'compte' && <UserAccountPage />}
+        {activeTab === 'compte' && <UserAccountPage setActiveTab={setActiveTab} />}
+
+        {activeTab === 'login' && <LoginPage setActiveTab={setActiveTab} />}
+
+        {activeTab === 'register' && <RegisterPage setActiveTab={setActiveTab} />}
       </main>
 
       <Footer

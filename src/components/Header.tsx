@@ -6,6 +6,7 @@ import {
   Globe,
   Info,
   Layers,
+  LogIn,
   LogOut,
   Menu,
   Phone,
@@ -13,6 +14,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   User as UserIcon,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -34,10 +36,11 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchTerm,
   onSearchSubmit,
 }) => {
-  const { currentUser, currentRole, switchRole, logout } = useAuth();
+  const { currentUser, currentRole, isAuthenticated, switchRole, logout } = useAuth();
   const { totalCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -260,15 +263,93 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Account Icon */}
-          <button
-            id="header-account-btn"
-            onClick={() => setActiveTab('compte')}
-            className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 text-xs font-semibold transition"
-          >
-            <UserIcon className="w-4 h-4 text-blue-600" />
-            <span className="max-w-[100px] truncate">{currentUser.nom}</span>
-          </button>
+          {/* Account & Auth Actions */}
+          {isAuthenticated && currentUser ? (
+            <div className="relative">
+              <button
+                id="header-account-btn"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 text-xs font-semibold transition"
+              >
+                <UserIcon className="w-4 h-4 text-blue-600" />
+                <span className="max-w-[100px] truncate">{currentUser.nom}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              <AnimatePresence>
+                {userDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2 z-50 text-slate-800 space-y-1"
+                  >
+                    <div className="px-3.5 py-2 border-b border-slate-100">
+                      <div className="font-extrabold text-xs text-slate-900 truncate">{currentUser.nom}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{currentUser.email}</div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setActiveTab('compte');
+                        setUserDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs flex items-center gap-2.5 hover:bg-slate-50 transition text-slate-700 font-semibold"
+                    >
+                      <UserIcon className="w-4 h-4 text-blue-600" />
+                      <span>Mon Espace Client</span>
+                    </button>
+
+                    {(currentRole === 'Admin' || currentRole === 'Vendeur') && (
+                      <button
+                        onClick={() => {
+                          setActiveTab('admin');
+                          setUserDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs flex items-center gap-2.5 hover:bg-purple-50 transition text-purple-700 font-semibold"
+                      >
+                        <Briefcase className="w-4 h-4 text-purple-600" />
+                        <span>Administration</span>
+                      </button>
+                    )}
+
+                    <div className="border-t border-slate-100 pt-1">
+                      <button
+                        onClick={() => {
+                          logout();
+                          setUserDropdownOpen(false);
+                          setActiveTab('login');
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs flex items-center gap-2.5 hover:bg-red-50 transition text-red-600 font-semibold"
+                      >
+                        <LogOut className="w-4 h-4 text-red-500" />
+                        <span>Se déconnecter</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                id="header-login-btn"
+                onClick={() => setActiveTab('login')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition"
+              >
+                <LogIn className="w-3.5 h-3.5 text-blue-600" />
+                <span>Connexion</span>
+              </button>
+              <button
+                id="header-register-btn"
+                onClick={() => setActiveTab('register')}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-sm shadow-blue-500/20 transition"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>S'inscrire</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Actions */}
@@ -363,16 +444,55 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <span>Contact</span>
               </button>
-              <button
-                onClick={() => {
-                  setActiveTab('compte');
-                  setMobileMenuOpen(false);
-                }}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100 pt-3"
-              >
-                <UserIcon className="w-4 h-4 text-blue-600" />
-                <span>Compte Client ({currentUser.nom})</span>
-              </button>
+              {isAuthenticated && currentUser ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setActiveTab('compte');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left py-2 px-3 rounded-lg hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100 pt-3"
+                  >
+                    <UserIcon className="w-4 h-4 text-blue-600" />
+                    <span>Compte Client ({currentUser.nom})</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                      setActiveTab('login');
+                    }}
+                    className="text-left py-2 px-3 rounded-lg hover:bg-red-50 text-red-600 font-semibold flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" />
+                    <span>Se déconnecter</span>
+                  </button>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    onClick={() => {
+                      setActiveTab('login');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="py-2.5 px-3 rounded-xl border border-slate-200 text-slate-700 font-bold flex items-center justify-center gap-1.5 text-xs"
+                  >
+                    <LogIn className="w-4 h-4 text-blue-600" />
+                    <span>Connexion</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab('register');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center gap-1.5 text-xs shadow-xs"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Créer un compte</span>
+                  </button>
+                </div>
+              )}
 
               {(currentRole === 'Admin' || currentRole === 'Vendeur') && (
                 <button

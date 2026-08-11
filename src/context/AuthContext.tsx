@@ -1,12 +1,16 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { MOCK_USERS } from '../data/mockData';
+import { api } from '../services/api';
 import { Role, User } from '../types';
 
 interface AuthContextType {
-  currentUser: User;
+  currentUser: User | null;
   currentRole: Role;
+  isAuthenticated: boolean;
   switchRole: (role: Role) => void;
   login: (email: string) => boolean;
+  loginApi: (email: string, password?: string) => Promise<User>;
+  registerApi: (nom: string, email: string, password?: string, role?: string) => Promise<User>;
   logout: () => void;
   allUsers: User[];
 }
@@ -14,9 +18,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]); // Default to Prosper (Admin) for full feature review
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('isp_user_session');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return MOCK_USERS[0]; // Default to Prosper (Admin) for demo review
+  });
 
-  const currentRole = currentUser.role;
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('isp_user_session', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('isp_user_session');
+    }
+  }, [currentUser]);
+
+  const currentRole: Role = currentUser ? currentUser.role : 'Client';
+  const isAuthenticated = currentUser !== null;
 
   const switchRole = (role: Role) => {
     const userForRole = MOCK_USERS.find((u) => u.role === role) || {
@@ -39,8 +60,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
+  const loginApi = async (email: string, password?: string): Promise<User> => {
+    const res = await api.login(email, password);
+    setCurrentUser(res.user);
+    return res.user;
+  };
+
+  const registerApi = async (nom: string, email: string, password?: string, role?: string): Promise<User> => {
+    const res = await api.register({ nom, email, password, role });
+    setCurrentUser(res.user);
+    return res.user;
+  };
+
   const logout = () => {
-    setCurrentUser(MOCK_USERS[2]); // Switch back to Client Alice
+    localStorage.removeItem('isp_user_session');
+    setCurrentUser(null);
   };
 
   return (
@@ -48,8 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         currentRole,
+        isAuthenticated,
         switchRole,
         login,
+        loginApi,
+        registerApi,
         logout,
         allUsers: MOCK_USERS,
       }}
