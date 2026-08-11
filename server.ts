@@ -11,6 +11,12 @@ import {
   MOCK_USERS,
 } from './src/data/mockData.js';
 import { Categorie, Client, Commande, Produit, User } from './src/types.js';
+import {
+  getDbStatus,
+  getMySQLPool,
+  initMySQLConnection,
+  isMySQLConnected,
+} from './src/db/mysql.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +32,15 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Initialize MySQL Connection (gracefully fallbacks to in-memory if unconfigured or error)
+  const dbStatus = await initMySQLConnection();
+  console.log(`[DB Status] Mode: ${dbStatus.mode.toUpperCase()}${dbStatus.error ? ' (' + dbStatus.error + ')' : ''}`);
+
+  // Database Status API
+  app.get('/api/db/status', (req, res) => {
+    res.json(getDbStatus());
+  });
 
   // API Routes
 

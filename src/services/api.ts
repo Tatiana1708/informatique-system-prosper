@@ -1,6 +1,22 @@
 import { Categorie, Client, Commande, DashboardStats, OrderStatus, PaymentStatus, Produit, User } from '../types';
 
 export const api = {
+  // Database Status
+  async getDbStatus(): Promise<{ connected: boolean; mode: 'mysql' | 'in-memory'; config: any; error?: string }> {
+    try {
+      const res = await fetch('/api/db/status');
+      if (!res.ok) throw new Error('API Error');
+      return await res.json();
+    } catch (e: any) {
+      return {
+        connected: false,
+        mode: 'in-memory',
+        config: { host: 'localhost', port: 3306, user: 'root', database: 'informatique_system_prosper' },
+        error: 'Impossible d\'interroger le statut de la base de données',
+      };
+    }
+  },
+
   // Stats
   async getDashboardStats(): Promise<DashboardStats> {
     try {

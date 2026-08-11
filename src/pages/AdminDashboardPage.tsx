@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AlertCircle,
+  CheckCircle2,
+  Database,
   DollarSign,
   FolderTree,
   Package,
+  Server,
   ShoppingBag,
   TrendingUp,
   UserCheck,
@@ -25,6 +29,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
     totalClients: 1,
   });
 
+  const [dbStatus, setDbStatus] = useState<{
+    connected: boolean;
+    mode: 'mysql' | 'in-memory';
+    config: { host: string; port: number; user: string; database: string };
+    error?: string;
+  }>({
+    connected: false,
+    mode: 'in-memory',
+    config: { host: 'localhost', port: 3306, user: 'root', database: 'informatique_system_prosper' },
+  });
+
   const [recentOrders, setRecentOrders] = useState<Commande[]>([]);
 
   useEffect(() => {
@@ -34,6 +49,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
         setStats(s);
         const ords = await api.getOrders();
         setRecentOrders(ords.slice(0, 5));
+        const db = await api.getDbStatus();
+        setDbStatus(db);
       } catch (err) {
         console.error(err);
       }
@@ -159,6 +176,73 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
           </div>
           <div className="text-3xl font-black text-slate-900">{stats.totalClients}</div>
           <div className="text-[11px] text-slate-400 font-medium">Comptes acheteurs actifs</div>
+        </div>
+      </div>
+
+      {/* Database Connection Status Section */}
+      <div className="bg-slate-900 text-white rounded-2xl border border-slate-800 p-6 shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${dbStatus.connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold text-sm text-white">Statut de la Base de Données MySQL</h2>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${dbStatus.connected ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+                  {dbStatus.mode === 'mysql' ? 'MySQL Connecté' : 'Mode Mémoire Volatile'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {dbStatus.connected
+                  ? `Connexion active sur ${dbStatus.config.host}:${dbStatus.config.port} — BDD: ${dbStatus.config.database}`
+                  : 'Exécution avec fallback mémoire local. Pour connecter votre instance MySQL, configurez les variables d\'environnement dans le panneau Secrets.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {dbStatus.connected ? (
+              <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/80 px-3 py-1.5 rounded-xl">
+                <CheckCircle2 className="w-4 h-4" />
+                Opérationnel
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold bg-amber-950/60 border border-amber-800/80 px-3 py-1.5 rounded-xl">
+                <AlertCircle className="w-4 h-4" />
+                Fallback Actif
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Configuration Specs Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Hôte / Host</span>
+            <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.host}</span>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Port</span>
+            <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.port}</span>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Utilisateur / User</span>
+            <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.user}</span>
+          </div>
+          <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+            <span className="text-[10px] text-slate-400 uppercase font-bold block">Base de données</span>
+            <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.database}</span>
+          </div>
+        </div>
+
+        {/* Schema Table List */}
+        <div className="text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Server className="w-3.5 h-3.5 text-blue-400" />
+            <span>Tables gérées : <strong className="text-slate-200">users</strong>, <strong className="text-slate-200">categories</strong>, <strong className="text-slate-200">products</strong>, <strong className="text-slate-200">clients</strong>, <strong className="text-slate-200">orders</strong>, <strong className="text-slate-200">order_lines</strong></span>
+          </div>
+          <span className="text-slate-500 font-mono">Pilote: mysql2/promise</span>
         </div>
       </div>
 
