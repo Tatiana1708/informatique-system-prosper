@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Download,
   FileText,
   Globe,
   Globe2,
@@ -15,6 +16,7 @@ import {
   MapPin,
   Network,
   Phone,
+  Printer,
   ShieldCheck,
   UserCheck,
   Users,
@@ -246,7 +248,33 @@ export const AboutPage: React.FC<AboutPageProps> = ({
         </div>
 
         {/* Tab Content Box */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs">
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+          {/* Official Document Banner Header */}
+          <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                  Document Officiel — Informatique System Prosper
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Siren : <strong className="text-white">798609020</strong> | Siret : <strong className="text-white">79860902000010</strong> | TVA : <strong className="text-white">FR76798609020</strong> | NAF : <strong className="text-white">4651Z</strong>
+              </p>
+              <p className="text-[11px] text-slate-400">
+                17 Avenue Léon Blum, 94230 Cachan, Val-De-Marne | Tél : +33 171 368 127 / +33 672 096 455
+              </p>
+            </div>
+
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-2 transition shrink-0"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-400" />
+              <span>Imprimer / Télécharger</span>
+            </button>
+          </div>
+
           {/* SPECIAL MOT DU PRÉSIDENT VIEW */}
           {activeDocId === 'president' ? (
             <div className="space-y-8">
@@ -281,7 +309,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
                   <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between">
                     <div>
                       <div className="font-bold text-slate-900 text-xs">{PRESIDENT_INFO.signature}</div>
-                      <div className="text-[11px] text-slate-500">Siège Social de Cachan</div>
+                      <div className="text-[11px] text-slate-500">Siège Social de Cachan — Val-De-Marne</div>
                     </div>
                     <Award className="w-8 h-8 text-blue-600" />
                   </div>
@@ -291,9 +319,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           ) : (
             /* ACCORDION FOR OTHER DOCUMENTS (Mentions Légales, Qui Sommes-Nous, Conditions de Vente) */
             <div className="space-y-4">
-              <div className="mb-6">
-                <h3 className="text-xl font-extrabold text-slate-900">{currentDoc.titre}</h3>
-                <p className="text-xs text-slate-500 mt-1">{currentDoc.description}</p>
+              <div className="mb-6 border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xl font-extrabold text-slate-900">{currentDoc.titre}</h3>
+                  <p className="text-xs text-slate-500 mt-1">{currentDoc.description}</p>
+                </div>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 self-start sm:self-auto">
+                  Document à jour & conforme
+                </span>
               </div>
 
               <div className="space-y-3">
@@ -322,7 +355,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
                       </button>
 
                       {isOpen && (
-                        <div className="p-5 text-xs text-slate-600 leading-relaxed bg-white border-t border-slate-100 whitespace-pre-line">
+                        <div className="p-5 text-xs text-slate-600 leading-relaxed bg-white border-t border-slate-100 whitespace-pre-line font-medium">
                           {section.contenu}
                         </div>
                       )}
@@ -344,16 +377,16 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           </div>
           <h2 className="text-2xl font-black text-white">Besoin d'un devis ou d'un conseil technique ?</h2>
           <p className="text-xs text-slate-300 leading-relaxed">
-            Nos équipes vous accueillent au <strong>17 Avenue Leon Blum, 94230 Cachan, France</strong> ou répondent à vos demandes par téléphone et courriel sous 24h.
+            Nos équipes vous accueillent au <strong>17 Avenue Léon Blum, 94230 Cachan, Val-De-Marne</strong> ou répondent à vos demandes par téléphone et courriel sous 24h.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 pt-2">
             <span className="flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>+33 (0)1 45 46 88 00</span>
+              <span>+33 171 368 127 / +33 672 096 455</span>
             </span>
             <span className="flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-blue-400" />
-              <span>contact@informatiquesystem.com</span>
+              <span>infosystemprosper@gmail.com</span>
             </span>
           </div>
         </div>

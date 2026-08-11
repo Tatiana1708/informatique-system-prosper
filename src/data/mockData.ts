@@ -300,29 +300,38 @@ export const MOCK_ORDERS: Commande[] = [
 ];
 
 export const PRESIDENT_INFO = {
-  nom: 'Prosper METENDE',
-  titre: 'Président-Fondateur',
+  nom: 'Monsieur Alain PROSPER',
+  titre: 'Fondateur et Président',
   entreprise: 'Informatique System Prosper',
+  siren: '798609020',
+  siret: '79860902000010',
+  tva: 'FR76798609020',
+  ape: '4651Z',
+  adresse: '17 Avenue Léon Blum, 94230 Cachan, Val-De-Marne',
+  telFixe: '+33 171 368 127',
+  telMob: '+33 672 096 455',
+  email: 'infosystemprosper@gmail.com',
+  web: 'isf.com',
   photoUrl: '/src/assets/images/president_photo_1785842468088.jpg',
   message: `Chers clients, partenaires et collaborateurs,
 
-C’est avec une immense fierté que je vous souhaite la bienvenue sur la plateforme officielle d’Informatique System Prosper.
+C’est avec une grande fierté que je vous souhaite la bienvenue sur la plateforme officielle d’Informatique System Prosper.
 
-Depuis notre création, notre mission a toujours été guidée par une exigence fondamentale : offrir le meilleur de la technologie informatique combiné à une qualité de service irréprochable. Que vous soyez une entreprise à la recherche d’équipements haute performance, un professionnel nécessitant une infrastructure réseau sécurisée ou un particulier passionné par le matériel informatique de pointe, nous mettons tout notre savoir-faire au service de vos projets.
+Depuis notre création, notre mission a toujours été guidée par une exigence fondamentale : fournir des équipements informatiques certifiés, des consommables de qualité ainsi que des services d’ingénierie et de maintenance à la hauteur de vos attentes.
 
-Présents en France métropolitaine, en Guyane, au Cameroun (Douala) et en Côte d’Ivoire (Abidjan), nous incarnons un pont technologique solide entre le continent européen et le continent africain. Nos équipes d’ingénieurs, de techniciens et de conseillers s’engagent chaque jour à garantir la fiabilité de vos systèmes d’information et la réactivité de nos interventions.
+Que vous soyez un particulier, une PME à la recherche de solutions sur mesure ou une administration nécessitant une infrastructure réseau hautement sécurisée, nos équipes mettent quotidiennement leur savoir-faire au service de vos projets.
 
-Dans un monde en constante mutation numérique, Informatique System Prosper continue d'investir dans l'innovation, l'éco-responsabilité et la formation de nos talents pour vous accompagner vers l’excellence technologique.
+Présents en France (Siège social de Cachan), en Guyane, au Cameroun (Douala) et en Côte d’Ivoire (Abidjan), nous représentons un partenaire informatique fiable et engagé dans le développement numérique international.
 
-Merci de votre confiance renouvelée.`,
-  signature: 'Prosper METENDE — Président d\'Informatique System Prosper',
+Merci pour votre confiance renouvelée.`,
+  signature: 'Monsieur Alain PROSPER — Fondateur et Président d\'Informatique System Prosper',
 };
 
 export const DOCUMENTS_INFO: DocumentInfo[] = [
   {
     id: 'president',
     titre: 'Mot du Président',
-    description: 'Message stratégique de M. Prosper METENDE, Président-Fondateur d\'Informatique System Prosper.',
+    description: 'Message stratégique de M. Alain PROSPER, Fondateur et Président d\'Informatique System Prosper.',
     sections: [
       {
         titre: 'Vision et engagements du Président',
@@ -333,145 +342,185 @@ export const DOCUMENTS_INFO: DocumentInfo[] = [
   {
     id: 'mentions-legales',
     titre: 'Mentions légales',
-    description: 'Document légal encadrant les activités et l’immatriculation de l’entreprise.',
+    description: 'Document officiel d’identification juridique et légale de la société Informatique System Prosper.',
     sections: [
       {
-        titre: '1. Identification de l\'Éditeur',
-        contenu: 'Le site web "Informatique System Prosper" est édité par la société Informatique System Prosper SAS, au capital social de 100 000 €, immatriculée au Registre du Commerce et des Sociétés sous le numéro RCS Nanterre B 892 410 321.',
+        titre: '1. Identification de l\'entreprise',
+        contenu: `Nom de l'entreprise : Informatique System Prosper
+Statut juridique : Entreprise individuelle / Micro-Société
+Fondateur et dirigeant : Monsieur Alain PROSPER
+Siren : 798609020
+Siret : 79860902000010
+Numéro de TVA Intracommunautaire : FR76798609020
+Code APE / NAF : 4651Z (Commerce de gros d'ordinateurs, d'équipements informatiques périphériques et de logiciels)`,
       },
       {
-        titre: '2. Activité professionnelle & Agréments',
-        contenu: 'Informatique System Prosper est spécialisée dans le commerce de détail et de gros de matériels informatiques, la maintenance des équipements, l’installation d’infrastructures réseaux d’entreprise et le conseil en architectures informatiques.',
+        titre: '2. Activité principale',
+        contenu: `Informatique System Prosper est une entreprise spécialisée dans :
+• La vente de matériel informatique (ordinateurs, écrans, composants, périphériques)
+• La vente de consommables informatiques (cartouches de toner, câblage, accessoires)
+• La maintenance et réparation informatique (dépannage, optimisation)
+• L'installation et la sécurisation de réseaux informatiques d'entreprise`,
       },
       {
-        titre: '3. Zones d\'Intervention & Filiales',
-        contenu: 'L\'entreprise déploie ses services en France Métropolitaine, en Guyane Française, au Cameroun (Agence régionale de Douala) et en Côte d\'Ivoire (Agence régionale d\'Abidjan).',
+        titre: '3. Zones d\'activité & Couverture internationale',
+        contenu: `L'entreprise exerce ses activités et déploie ses prestations en :
+• Guyane Française
+• Europe (France Métropolitaine - Siège social)
+• Afrique francophone (Agences régionales au Cameroun et en Côte d'Ivoire)`,
       },
       {
-        titre: '4. Siège Social & Coordonnées',
-        contenu: 'Siège Social : 17 Avenue Leon Blum, 94230 Cachan, France.\nTéléphone : +33 (0)1 45 46 88 00\nCourriel : contact@informatiquesystem.com\nDirecteur de la publication : Prosper METENDE.',
+        titre: '4. Siège social & Coordonnées de contact',
+        contenu: `Adresse du Siège Social : 17 Avenue Léon Blum, 94230 Cachan, Val-De-Marne, France
+Téléphone Fixe : +33 171 368 127
+Téléphone Mobile : +33 672 096 455
+Adresse e-mail officielle : infosystemprosper@gmail.com
+Site web officiel : isf.com`,
       },
       {
-        titre: '5. Propriété Intellectuelle',
-        contenu: 'L’ensemble des contenus présents sur la plateforme (textes, logos, visuels, photographies, éléments graphiques et architecture logicielle) est protégé par les lois internationales relatives à la propriété intellectuelle.',
+        titre: '5. Propriété intellectuelle',
+        contenu: 'Tous les contenus liés à l\'entreprise (nom, logo, documents, photographies, site internet, etc.) sont protégés par les lois en vigueur sur la propriété intellectuelle. Toute reproduction, modification ou utilisation sans autorisation préalable est strictement interdite.',
       },
       {
-        titre: '6. Données Personnelles & RGPD',
-        contenu: 'Informatique System Prosper s’engage à protéger vos données à caractère personnel conformément au Règlement Général sur la Protection des Données (RGPD 2016/679). Vous disposez d’un droit d’accès, de rectification et de suppression.',
+        titre: '6. Données personnelles & Confidentialité',
+        contenu: 'Les informations collectées auprès des clients sont utilisées uniquement dans le cadre de la gestion commerciale et du traitement des commandes. Elles restent strictement confidentielles et ne sont ni vendues ni transmises à des tiers.',
       },
       {
-        titre: '7. Limitation de Responsabilité',
-        contenu: 'Informatique System Prosper s’efforce d’assurer la précision des informations diffusées mais ne saurait être tenue responsable des interruptions temporaires du service ou de variations de stocks fournisseurs.',
+        titre: '7. Limitation de responsabilité',
+        contenu: `L'entreprise ne peut être tenue responsable :
+• Des dommages indirects liés à l'utilisation des produits ou matériels vendus
+• Des pertes de données survenues sur les équipements confiés en réparation
+• Des interruptions de service indépendantes de sa volonté ou cas de force majeure`,
       },
       {
         titre: '8. Gestion des Cookies',
-        contenu: 'Des cookies techniques et d’audience sont utilisés pour vous offrir une navigation optimale et mémoriser votre panier ainsi que vos préférences de connexion.',
+        contenu: 'Le site internet de l\'entreprise peut utiliser des cookies afin d\'améliorer l\'expérience utilisateur et de mémoriser les éléments du panier. L\'utilisateur peut accepter ou refuser ces cookies via les paramètres de son navigateur.',
       },
       {
-        titre: '9. Droit Applicable & Juridiction',
-        contenu: 'Les présentes mentions sont régies par le droit français. En cas de litige, les tribunaux compétents du ressort du siège social seront seuls habilités.',
+        titre: '9. Droit applicable & Juridiction',
+        contenu: 'Les présentes mentions légales sont soumises au droit applicable dans le pays d\'exercice de l\'activité. En cas de litige, une solution amiable sera recherchée avant toute action judiciaire.',
       },
     ],
   },
   {
     id: 'qui-sommes-nous',
     titre: 'Qui sommes-nous ?',
-    description: 'Présentation complète de nos valeurs, de nos agences et de notre mission internationale.',
+    description: 'Présentation générale de la structure, des services, des implantations et des objectifs de l’entreprise.',
     sections: [
       {
-        titre: '1. Présentation Générale',
-        contenu: 'Informatique System Prosper est un acteur majeur des solutions informatiques globales pour entreprises et particuliers, combinant distribution de matériel, infogérance et intégration système.',
+        titre: '1. Présentation générale',
+        contenu: 'Informatique System Prosper est une entreprise spécialisée en informatique, dédiée à la vente de produits numériques de pointe et à la réalisation de prestations informatiques à haute valeur ajoutée. Notre équipe professionnelle et qualifiée s’investit au quotidien pour satisfaire l’ensemble des besoins de nos clients.',
       },
       {
-        titre: '2. Zones Géographiques & Présence Internationale',
-        contenu: 'Afin d’assurer une proximité sans égale avec nos clients, nous opérons activement en France (Siège Cachan), en Guyane, au Cameroun (Douala) et en Côte d’Ivoire (Abidjan).',
+        titre: '2. Zones d\'intervention & Typologie de clients',
+        contenu: `Nos zones d'action s'étendent en Guyane, en Europe et en Afrique francophone.
+Nous accompagnons une clientèle diversifiée comprenant :
+• Particuliers
+• Entreprises & PME
+• Administrations publiques et institutions`,
       },
       {
-        titre: '3. Vente de Matériel Informatique de Pointe',
-        contenu: 'Nous distribuons les plus grandes marques mondiales (Samsung, NVIDIA, Dell, Asus, HP, TP-Link, Cisco) garantissant authenticité, performance et garantie constructeur étendue.',
+        titre: '3. Vente de matériel & consommables',
+        contenu: `Nous proposons un large catalogue de produits informatiques de marque :
+• Ordinateurs fixes et portables
+• Écrans haute définition, claviers, souris ergonomiques
+• Imprimantes et accessoires réseau
+• Consommables informatiques (cartouches de toners, câbles, connectiques)`,
       },
       {
-        titre: '4. Services de Maintenance & Réparation Express',
-        contenu: 'Nos ateliers certifiés et techniciens itinérants assurent la maintenance préventive et curative de vos parcs informatiques sous un contrat d\'intervention garanti sous 4 heures.',
+        titre: '4. Services informatiques proposés',
+        contenu: `🛠️ Maintenance et réparation : Dépannage informatique express, diagnostic et réparation d'appareils.
+🌐 Installation réseau : Déploiement Wi-Fi et Internet, configuration des équipements réseaux, audit et sécurisation des systèmes d'information.`,
       },
       {
-        titre: '5. Organisation Interne & Équipes Experts',
-        contenu: 'Notre structure s’articule autour de pôles spécialisés : pôle commercial, ingénierie système et réseau, service après-vente (SAV) et logistique internationale.',
+        titre: '5. Organisation & Implantation internationale',
+        contenu: `Une présence stratégique pour répondre efficacement aux demandes :
+• France Métropolitaine (Siège à Cachan)
+• Cameroun (Agence de Douala)
+• Côte d'Ivoire (Agence d'Abidjan)
+📞 Service client accessible & Assistance technique rapide.`,
       },
       {
-        titre: '6. Nos Objectifs Stratégiques',
-        contenu: 'Rendre accessibles les technologies informatiques les plus avancées tout en réduisant l’empreinte carbone à travers la revalorisation du matériel et la durabilité des équipements.',
+        titre: '6. Objectifs fondamentaux',
+        contenu: `• Offrir du matériel informatique de qualité irréprochable
+• Assurer un service rapide et un support technique de proximité
+• Accompagner les clients dans leur transformation numérique
+• Garantir la sécurité et la pérennité des systèmes informatiques`,
       },
       {
-        titre: '7. Importance de la Transition Numérique',
-        contenu: 'Nous accompagnons la transformation digitale des PME et grandes institutions en leur apportant des outils réseaux fiables, sécurisés et évolutifs.',
+        titre: '7. Impact & Importance de la transition numérique',
+        contenu: 'Informatique System Prosper facilite l\'accès aux nouvelles technologies, aide les entreprises à faire évoluer leurs outils de travail et contribue activement au développement numérique dans l\'ensemble des territoires où elle opère.',
       },
       {
-        titre: '8. Engagements Qualité & Satisfaction Client',
-        contenu: 'Chaque commande bénéficie d’un contrôle rigoureux avant expédition, d’une traçabilité de livraison complète et d’une assistance téléphonique dédiée.',
-      },
-      {
-        titre: '9. Conclusion & Perspectives d\'Avenir',
-        contenu: 'Informatique System Prosper ambitionne d’étendre son réseau de distribution et d’inaugurer de nouveaux centres de formation aux métiers du numérique d’ici 2028.',
+        titre: '8. Conclusion',
+        contenu: 'Entreprise dynamique et résolument tournée vers l\'international, Informatique System Prosper s\'affirme comme un partenaire informatique fiable et incontournable pour tous vos projets technologiques.',
       },
     ],
   },
   {
     id: 'conditions-vente',
     titre: 'Conditions Générales de Vente (CGV)',
-    description: 'Règles et conditions contractuelles encadrant les achats et prestations.',
+    description: 'Cadre contractuel et conditions régissant les achats de matériels et services auprès d’Informatique System Prosper.',
     sections: [
       {
-        titre: '1. Objet & Champ d\'Application',
-        contenu: 'Les présentes CGV régissent l’ensemble des ventes conclues entre Informatique System Prosper et toute personne physique ou morale effectuant un achat.',
+        titre: '1. Objet',
+        contenu: 'Les présentes conditions de vente définissent l\'ensemble des règles applicables aux ventes de produits et prestations de services proposées par Informatique System Prosper.',
       },
       {
-        titre: '2. Produits & Disponibilité',
-        contenu: 'Nos offres de produits sont valables tant qu’elles sont visibles sur le site et dans la limite des stocks disponibles.',
+        titre: '2. Produits et services proposés',
+        contenu: `L'entreprise propose à la vente :
+• Matériel informatique (ordinateurs, écrans, composants, accessoires)
+• Consommables (cartouches d'encre, toners, câblages)
+• Services informatiques (maintenance préventive et curative, réparation, installation de réseaux)`,
       },
       {
-        titre: '3. Prix & Modalités de Facturation',
-        contenu: 'Les prix sont indiqués en Euros (€) Toutes Taxes Comprises (TTC) et tiennent compte de la TVA applicable au jour de la commande.',
+        titre: '3. Prix & Devise',
+        contenu: 'Les prix sont indiqués en Euros (€) ou en monnaie locale selon le pays d\'achat. L\'entreprise se réserve le droit de modifier ses tarifs à tout moment. Le prix facturé au client est celui en vigueur au moment de la validation de la commande.',
       },
       {
-        titre: '4. Validation de la Commande',
-        contenu: 'Toute commande validée sur le site implique l’acceptation sans réserve des présentes CGV et constitue une preuve de contrat.',
+        titre: '4. Commande',
+        contenu: 'Toute commande validée sur le site ou en agence implique l\'acceptation sans réserve des présentes conditions de vente. La commande devient définitive après accord explicite du client et règlement du montant dû.',
       },
       {
-        titre: '5. Modalités de Paiement',
-        contenu: 'Le règlement s’effectue par Carte Bancaire (Visa, MasterCard), Virement bancaire ou paiement échelonné sécurisé.',
+        titre: '5. Modalités de paiement',
+        contenu: `Les moyens de paiement acceptés selon les pays sont :
+• Espèces (en agence)
+• Virement bancaire
+• Carte bancaire
+• PayPal
+Le paiement doit être effectué conformément aux conditions convenues lors de la commande.`,
       },
       {
-        titre: '6. Livraison & Délais d\'Expédition',
-        contenu: 'Les livraisons sont assurées sous 24h à 72h ouvrées en France et par fret express contrôlé pour les destinations outre-mer et Afrique.',
+        titre: '6. Livraison & Expédition',
+        contenu: 'Les livraisons sont assurées à destination de la Guyane, de l\'Europe et des pays d\'Afrique francophone. Les délais de livraison sont donnés à titre indicatif et varient selon les contraintes logistiques régionales.',
       },
       {
-        titre: '7. Réception & Vérification du Matériel',
-        contenu: 'Le client doit contrôler l’état de l’emballage et du matériel à la livraison et émettre le cas échéant des réserves précises sous 48h.',
+        titre: '7. Réception des produits & Signalement d\'anomalies',
+        contenu: 'Le client est tenu de vérifier l\'état des emballages et de la marchandise lors de la réception. Toute anomalie ou avarie doit être signalée au service client dans un délai maximal de 48 heures.',
       },
       {
-        titre: '8. Droit de Rétractation (14 jours)',
-        contenu: 'Conformément au code de la consommation, le client particulier dispose d’un délai de 14 jours calendaires pour retourner son produit intact.',
+        titre: '8. Garantie constructeur & exclusions',
+        contenu: 'Les produits vendus bénéficient de la garantie légale et de la garantie constructeur. La garantie ne couvre pas les dysfonctionnements résultant d\'une mauvaise utilisation, d\'un choc ou d\'une intervention technique non autorisée.',
       },
       {
-        titre: '9. Garantie Légale & Constructeur',
-        contenu: 'Tous les matériels vendus bénéficient de la garantie légale de conformité (2 ans) et de la garantie constructeur (jusqu’à 5 ans).',
+        titre: '9. Service après-vente (SAV)',
+        contenu: 'Un service après-vente qualifié est à la disposition des clients pour : Réparation matérielle, Maintenance et Assistance technique. Certaines interventions hors garantie peuvent faire l\'objet d\'une facturation.',
       },
       {
-        titre: '10. Service Après-Vente (SAV) & Retours',
-        contenu: 'Tout retour doit faire l’objet d’un numéro RMA préalable attribué par notre support technique joignable via l’espace client.',
+        titre: '10. Responsabilité & Sauvegarde des données',
+        contenu: 'Informatique System Prosper n\'est pas responsable des pertes de données ou des dommages indirects liés à l\'utilisation du matériel. Le client doit impérativement effectuer la sauvegarde préalable de ses données personnelles.',
       },
       {
-        titre: '11. Limites de Responsabilité & Force Majeure',
-        contenu: 'Informatique System Prosper ne saura être tenue responsable en cas d’incompatibilité matérielle non signalée ou de cas de force majeure.',
+        titre: '11. Données personnelles',
+        contenu: 'Les données à caractère personnel recueillies lors des commandes sont réservées au traitement commercial interne. Elles restent confidentielles et ne sont transmises à aucun tiers.',
       },
       {
-        titre: '12. Protection des Données & Traçabilité',
-        contenu: 'Les données de transaction sont cryptées SSL et conservées uniquement pour le traitement administratif et légal des factures.',
+        titre: '12. Règlement des litiges',
+        contenu: 'En cas de litige relatif à l\'interprétation ou à l\'exécution des ventes, les parties s\'engagent à rechercher une solution amiable en priorité. À défaut d\'accord, les tribunaux compétents seront saisis.',
       },
       {
-        titre: '13. Litiges & Droit Applicable',
-        contenu: 'Les présentes CGV sont soumises à la loi française. À défaut d’accord amiable, le tribunal de commerce compétent sera saisi.',
+        titre: '13. Acceptation complète',
+        contenu: 'Toute commande implique l\'acceptation intégrale et sans réserve des présentes conditions de vente.\n\nInformatique System Prosper — Dirigée par Monsieur Alain PROSPER, Fondateur et Président.',
       },
     ],
   },

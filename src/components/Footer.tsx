@@ -45,15 +45,15 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab, setSelectedDocTab 
             <ul className="space-y-2.5 text-xs text-slate-300">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                <span>17 Avenue Leon Blum, 94230 Cachan, France</span>
+                <span>17 Avenue Léon Blum, 94230 Cachan, Val-De-Marne, France</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>+33 (0)1 45 46 88 00</span>
+                <span>+33 171 368 127 / +33 672 096 455</span>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>contact@informatiquesystem.com</span>
+                <span>infosystemprosper@gmail.com</span>
               </li>
             </ul>
           </div>
