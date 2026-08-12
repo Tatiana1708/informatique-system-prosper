@@ -220,7 +220,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
                 className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-left transition font-semibold"
               >
                 <div className="text-[10px] text-purple-600 uppercase font-black">Admin</div>
-                <div className="truncate text-xs">Prosper METENDE</div>
+                <div className="truncate text-xs">Alain PROSPER</div>
               </button>
               <button
                 type="button"
