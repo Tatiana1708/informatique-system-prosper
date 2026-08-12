@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, ShieldCheck, ShoppingBag, Tag } from 'lucide-react';
+import { Eye, ShieldCheck, ShoppingCart, Tag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Produit } from '../types';
 
@@ -113,7 +113,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ produit, onSelectProdu
               }`}
               title={isAvailable ? 'Ajouter au panier' : 'Rupture de stock'}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingCart className="w-4 h-4" />
             </button>
           </div>
         </div>

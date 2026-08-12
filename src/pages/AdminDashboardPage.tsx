@@ -180,7 +180,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
       </div>
 
       {/* Database Connection Status Section */}
-      <div className="bg-slate-900 text-white rounded-2xl border border-slate-800 p-6 shadow-md space-y-4">
+      {/* <div className="bg-slate-900 text-white rounded-2xl border border-slate-800 p-6 shadow-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
             <div className={`p-2.5 rounded-xl ${dbStatus.connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
@@ -214,10 +214,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
               </span>
             )}
           </div>
-        </div>
+        </div>*/}
 
         {/* Configuration Specs Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
+        {/*<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
           <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
             <span className="text-[10px] text-slate-400 uppercase font-bold block">Hôte / Host</span>
             <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.host}</span>
@@ -234,17 +234,17 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ setAdmin
             <span className="text-[10px] text-slate-400 uppercase font-bold block">Base de données</span>
             <span className="font-mono text-slate-200 font-semibold mt-0.5 block">{dbStatus.config.database}</span>
           </div>
-        </div>
+        </div>*/}
 
         {/* Schema Table List */}
-        <div className="text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+        {/*<div className="text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Server className="w-3.5 h-3.5 text-blue-400" />
             <span>Tables gérées : <strong className="text-slate-200">users</strong>, <strong className="text-slate-200">categories</strong>, <strong className="text-slate-200">products</strong>, <strong className="text-slate-200">clients</strong>, <strong className="text-slate-200">orders</strong>, <strong className="text-slate-200">order_lines</strong></span>
           </div>
           <span className="text-slate-500 font-mono">Pilote: mysql2/promise</span>
         </div>
-      </div>
+      </div> */}
 
       {/* Recent Orders List */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">

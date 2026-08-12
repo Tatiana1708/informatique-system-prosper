@@ -39,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
 
     setLoading(true);
 
-    try {
+    try {//pwd:demo1234, user:prosper@informatiquesystem.com,jean.vendeur@informatiquesystem.com,alice.martin@gmail.com
       const user = await loginApi(email, password);
       setSuccessMsg(`Ravi de vous revoir, ${user.nom} !`);
       setTimeout(() => {
@@ -209,7 +209,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
           </form>
 
           {/* Demo Accounts Quick Login */}
-          <div className="pt-4 border-t border-slate-100 space-y-3">
+          {/* <div className="pt-4 border-t border-slate-100 space-y-3">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Comptes Démo de Test (Accès Rapide) :
             </span>
@@ -239,7 +239,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
                 <div className="truncate text-xs">Alice MARTIN</div>
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Switch to Register */}

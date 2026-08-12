@@ -12,7 +12,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
-  ShoppingBag,
+  ShoppingCart,
   User as UserIcon,
   UserPlus,
   X,
@@ -68,86 +68,88 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Role Switcher Badge */}
-          <div className="relative flex items-center gap-2">
-            <span className="text-slate-400 font-medium hidden sm:inline">Rôle actif :</span>
-            <div className="relative">
-              <button
-                id="role-switcher-btn"
-                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition"
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    currentRole === 'Admin'
-                      ? 'bg-purple-500'
-                      : currentRole === 'Vendeur'
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-500'
-                  }`}
-                />
-                <span>{currentRole}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
+          {(currentRole === 'Admin') && (
+            <div className="relative flex items-center gap-2">
+              <span className="text-slate-400 font-medium hidden sm:inline">Rôle actif :</span>
+              <div className="relative">
+                <button
+                  id="role-switcher-btn"
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition"
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      currentRole === 'Admin'
+                        ? 'bg-purple-500'
+                        : currentRole === 'Vendeur'
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                  />
+                  <span>{currentRole}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                </button>
 
-              <AnimatePresence>
-                {roleDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50 text-slate-800"
-                  >
-                    <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-                      Changer de vue
-                    </div>
-                    {roles.map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => {
-                          switchRole(r);
-                          setRoleDropdownOpen(false);
-                          if (r === 'Admin' || r === 'Vendeur') {
-                            setActiveTab('admin');
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-slate-50 transition ${
-                          currentRole === r ? 'font-bold text-blue-600 bg-blue-50/50' : ''
-                        }`}
-                      >
-                        <span>{r}</span>
-                        {r === 'Admin' && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-700">
-                            Back-office
-                          </span>
-                        )}
-                        {r === 'Vendeur' && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-700">
-                            Ventes
-                          </span>
-                        )}
-                        {r === 'Client' && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700">
-                            Boutique
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                <AnimatePresence>
+                  {roleDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50 text-slate-800"
+                    >
+                      <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                        Changer de vue
+                      </div>
+                      {roles.map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => {
+                            switchRole(r);
+                            setRoleDropdownOpen(false);
+                            if (r === 'Admin' || r === 'Vendeur') {
+                              setActiveTab('admin');
+                            }
+                          }}
+                          className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-slate-50 transition ${
+                            currentRole === r ? 'font-bold text-blue-600 bg-blue-50/50' : ''
+                          }`}
+                        >
+                          <span>{r}</span>
+                          {r === 'Admin' && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 text-purple-700">
+                              Back-office
+                            </span>
+                          )}
+                          {r === 'Vendeur' && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-700">
+                              Ventes
+                            </span>
+                          )}
+                          {r === 'Client' && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700">
+                              Boutique
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {(currentRole === 'Admin' || currentRole === 'Vendeur') && (
+                <button
+                  id="header-admin-link"
+                  onClick={() => setActiveTab('admin')}
+                  className="ml-2 px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1 transition"
+                >
+                  <Briefcase className="w-3 h-3" />
+                  <span>Espace Administration</span>
+                </button>
+              )}
             </div>
-
-            {(currentRole === 'Admin' || currentRole === 'Vendeur') && (
-              <button
-                id="header-admin-link"
-                onClick={() => setActiveTab('admin')}
-                className="ml-2 px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1 transition"
-              >
-                <Briefcase className="w-3 h-3" />
-                <span>Espace Administration</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
@@ -173,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4">
+        {/* <div className="hidden md:flex flex-1 max-w-md mx-4">
           <div className="relative w-full">
             <input
               id="header-search-input"
@@ -193,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
               Chercher
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Desktop Navigation Menu & Actions */}
         <div className="hidden lg:flex items-center gap-6">
@@ -214,9 +216,9 @@ export const Header: React.FC<HeaderProps> = ({
                 activeTab === 'produits' ? 'text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5' : ''
               }`}
             >
-              Nos Produits
+              Produits
             </button>
-            <button
+            {/* <button
               id="nav-link-categories"
               onClick={() => setActiveTab('categories')}
               className={`hover:text-blue-600 transition ${
@@ -224,7 +226,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               Catégories
-            </button>
+            </button> */}
             <button
               id="nav-link-a-propos"
               onClick={() => setActiveTab('a-propos')}
@@ -232,7 +234,6 @@ export const Header: React.FC<HeaderProps> = ({
                 activeTab === 'a-propos' ? 'text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5' : ''
               }`}
             >
-              <Info className="w-4 h-4 text-blue-500" />
               <span>À propos</span>
             </button>
             <button
@@ -255,7 +256,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="relative p-2 text-slate-700 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition"
             title="Mon Panier"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingCart className="w-5 h-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                 {totalCount}
@@ -359,7 +360,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('panier')}
             className="relative p-2 text-slate-700 hover:text-blue-600 rounded-lg"
           >
-            <ShoppingBag className="w-5 h-5" />
+            <ShoppingCart className="w-5 h-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {totalCount}
