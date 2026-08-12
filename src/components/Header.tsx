@@ -12,7 +12,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
-  ShoppingCart,
+  ShoppingBag,
   User as UserIcon,
   UserPlus,
   X,
@@ -173,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Search Bar */}
-        {/* <div className="hidden md:flex flex-1 max-w-md mx-4">
+        <div className="hidden md:flex flex-1 max-w-md mx-4">
           <div className="relative w-full">
             <input
               id="header-search-input"
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
               Chercher
             </button>
           </div>
-        </div> */}
+        </div>
 
         {/* Desktop Navigation Menu & Actions */}
         <div className="hidden lg:flex items-center gap-6">
@@ -214,9 +214,9 @@ export const Header: React.FC<HeaderProps> = ({
                 activeTab === 'produits' ? 'text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5' : ''
               }`}
             >
-              Produits
+              Nos Produits
             </button>
-            {/* <button
+            <button
               id="nav-link-categories"
               onClick={() => setActiveTab('categories')}
               className={`hover:text-blue-600 transition ${
@@ -224,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               Catégories
-            </button> */}
+            </button>
             <button
               id="nav-link-a-propos"
               onClick={() => setActiveTab('a-propos')}
@@ -232,6 +232,7 @@ export const Header: React.FC<HeaderProps> = ({
                 activeTab === 'a-propos' ? 'text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5' : ''
               }`}
             >
+              <Info className="w-4 h-4 text-blue-500" />
               <span>À propos</span>
             </button>
             <button
@@ -254,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="relative p-2 text-slate-700 hover:text-blue-600 hover:bg-slate-100 rounded-xl transition"
             title="Mon Panier"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingBag className="w-5 h-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
                 {totalCount}
@@ -358,7 +359,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('panier')}
             className="relative p-2 text-slate-700 hover:text-blue-600 rounded-lg"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingBag className="w-5 h-5" />
             {totalCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {totalCount}

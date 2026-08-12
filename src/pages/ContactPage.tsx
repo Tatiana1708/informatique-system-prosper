@@ -59,7 +59,7 @@ export const ContactPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Alain PROSPER"
+                  placeholder="Ex: Prosper METENDE"
                   value={formData.nom}
                   onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-blue-500"

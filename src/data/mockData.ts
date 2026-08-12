@@ -12,7 +12,7 @@ export const INITIAL_STATS: DashboardStats = {
 export const MOCK_USERS: User[] = [
   {
     id: 'u1',
-    nom: 'Alain PROSPER',
+    nom: 'Prosper METENDE',
     email: 'prosper@informatiquesystem.com',
     role: 'Admin',
     statut: 'Actif',

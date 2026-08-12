@@ -27,10 +27,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const menuItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
     { id: 'utilisateurs', label: 'Gestion Utilisateurs', icon: Users },
-    { id: 'produits', label: 'Gestion Produits', icon: Package },
+    { id: 'clients', label: 'Gestion Clients', icon: UserCheck },
     { id: 'commandes', label: 'Gestion Commandes', icon: ShoppingBag },
     { id: 'categories', label: 'Gestion Catégories', icon: FolderTree },
-    { id: 'clients', label: 'Gestion Clients', icon: UserCheck },
+    { id: 'produits', label: 'Gestion Produits', icon: Package },
   ];
 
   return (
