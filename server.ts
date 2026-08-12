@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import {
   INITIAL_STATS,
@@ -17,9 +17,6 @@ import {
   initMySQLConnection,
   isMySQLConnected,
 } from './src/db/mysql.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let usersStore: User[] = [...MOCK_USERS];
 let clientsStore: Client[] = [...MOCK_CLIENTS];

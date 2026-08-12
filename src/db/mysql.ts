@@ -26,12 +26,17 @@ let isConnected = false;
 let connectionError: string | undefined = undefined;
 
 export function getDbConfig() {
+  let dbName = process.env.MYSQL_DATABASE || 'informatique_system_prosper';
+  // 'sys', 'mysql', 'information_schema', 'performance_schema' are restricted system databases
+  if (['sys', 'mysql', 'information_schema', 'performance_schema'].includes(dbName.toLowerCase())) {
+    dbName = 'test';
+  }
   return {
     host: process.env.MYSQL_HOST || 'localhost',
     port: Number(process.env.MYSQL_PORT) || 3306,
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE || 'informatique_system_prosper',
+    database: dbName,
   };
 }
 
@@ -50,6 +55,10 @@ export async function initMySQLConnection(): Promise<DbStatus> {
   }
 
   try {
+    // Determine if SSL is required (TiDB Cloud or remote cloud hosts)
+    const isCloudHost = config.host.includes('tidbcloud.com') || config.host.includes('aiven') || process.env.MYSQL_SSL === 'true' || config.port === 4000;
+    const sslOption = isCloudHost ? { minVersion: 'TLSv1.2', rejectUnauthorized: false } : undefined;
+
     // Attempt connection
     if (process.env.MYSQL_URL) {
       pool = mysql.createPool(process.env.MYSQL_URL);
@@ -63,6 +72,7 @@ export async function initMySQLConnection(): Promise<DbStatus> {
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
+        ssl: sslOption,
       });
     }
 
