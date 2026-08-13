@@ -427,6 +427,14 @@ async function startServer() {
     });
   });
 
+  // Serve /src/assets statically as a fallback for asset images
+  app.use('/src/assets', express.static(path.join(process.cwd(), 'src/assets')));
+
+  // Favicon handler
+  app.get('/favicon.ico', (req, res) => {
+    res.status(204).end();
+  });
+
   // Vite middleware for dev / static in prod
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -437,7 +445,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
