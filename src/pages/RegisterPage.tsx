@@ -11,6 +11,7 @@ import {
   User,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 interface RegisterPageProps {
   setActiveTab: (tab: string) => void;
@@ -18,6 +19,7 @@ interface RegisterPageProps {
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ setActiveTab }) => {
   const { registerApi } = useAuth();
+  const { cart } = useCart();
 
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -65,14 +67,15 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ setActiveTab }) => {
 
     try {
       const user = await registerApi(nom, email, password, role);
-      setSuccessMsg(`Félicitations ! Compte créé avec succès pour ${user.nom}.`);
+      const redirectTab = cart.length > 0 ? 'panier' : (user.role === 'Admin' || user.role === 'Vendeur' ? 'admin' : 'compte');
+      setSuccessMsg(
+        cart.length > 0
+          ? `Félicitations ${user.nom} ! Votre compte est créé. Redirection vers votre panier pour finaliser l'achat...`
+          : `Félicitations ! Compte créé avec succès pour ${user.nom}.`
+      );
       setTimeout(() => {
-        if (user.role === 'Admin' || user.role === 'Vendeur') {
-          setActiveTab('admin');
-        } else {
-          setActiveTab('compte');
-        }
-      }, 900);
+        setActiveTab(redirectTab);
+      }, 800);
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la création du compte');
     } finally {

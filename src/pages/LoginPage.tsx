@@ -11,6 +11,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 interface LoginPageProps {
   setActiveTab: (tab: string) => void;
@@ -18,6 +19,7 @@ interface LoginPageProps {
 
 export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
   const { loginApi, switchRole } = useAuth();
+  const { cart } = useCart();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,15 +41,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
 
     setLoading(true);
 
-    try {//pwd:demo1234, user:prosper@informatiquesystem.com,jean.vendeur@informatiquesystem.com,alice.martin@gmail.com
+    try {
       const user = await loginApi(email, password);
-      setSuccessMsg(`Ravi de vous revoir, ${user.nom} !`);
+      const redirectTab = cart.length > 0 ? 'panier' : (user.role === 'Admin' || user.role === 'Vendeur' ? 'admin' : 'compte');
+      setSuccessMsg(
+        cart.length > 0
+          ? `Ravi de vous revoir, ${user.nom} ! Redirection vers votre panier pour valider vos achats...`
+          : `Ravi de vous revoir, ${user.nom} !`
+      );
       setTimeout(() => {
-        if (user.role === 'Admin' || user.role === 'Vendeur') {
-          setActiveTab('admin');
-        } else {
-          setActiveTab('compte');
-        }
+        setActiveTab(redirectTab);
       }, 700);
     } catch (err: any) {
       setError(err.message || 'Identifiants ou mot de passe incorrects');
@@ -64,24 +67,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ setActiveTab }) => {
 
     try {
       const user = await loginApi(demoEmail, 'demo1234');
-      setSuccessMsg(`Connexion rapide sous le profil ${roleName} (${user.nom})`);
+      const redirectTab = cart.length > 0 ? 'panier' : (user.role === 'Admin' || user.role === 'Vendeur' ? 'admin' : 'compte');
+      setSuccessMsg(
+        cart.length > 0
+          ? `Connexion rapide réussie (${user.nom}) ! Redirection vers votre panier...`
+          : `Connexion rapide sous le profil ${roleName} (${user.nom})`
+      );
       setTimeout(() => {
-        if (user.role === 'Admin' || user.role === 'Vendeur') {
-          setActiveTab('admin');
-        } else {
-          setActiveTab('compte');
-        }
+        setActiveTab(redirectTab);
       }, 600);
     } catch (err: any) {
       // Fallback local switch
       switchRole(roleName as any);
-      setSuccessMsg(`Mode démo basculé sur ${roleName}`);
+      const redirectTab = cart.length > 0 ? 'panier' : (roleName === 'Admin' || roleName === 'Vendeur' ? 'admin' : 'compte');
+      setSuccessMsg(
+        cart.length > 0
+          ? `Mode démo basculé sur ${roleName}. Redirection vers votre panier...`
+          : `Mode démo basculé sur ${roleName}`
+      );
       setTimeout(() => {
-        if (roleName === 'Admin' || roleName === 'Vendeur') {
-          setActiveTab('admin');
-        } else {
-          setActiveTab('compte');
-        }
+        setActiveTab(redirectTab);
       }, 600);
     } finally {
       setLoading(false);

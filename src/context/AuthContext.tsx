@@ -21,11 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('isp_user_session');
-      if (saved) return JSON.parse(saved);
+      if (saved && saved !== 'null') return JSON.parse(saved);
     } catch {
       // ignore
     }
-    return MOCK_USERS[0]; // Default to Prosper (Admin) for demo review
+    return null;
   });
 
   useEffect(() => {

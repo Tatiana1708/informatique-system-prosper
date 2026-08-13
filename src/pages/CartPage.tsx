@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Trash2,
   Truck,
+  UserCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -20,7 +21,7 @@ interface CartPageProps {
 
 export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
   const { cart, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
 
   const [adresseLivraison, setAdresseLivraison] = useState('12 Rue de la République, 75011 Paris');
   const [modePaiement, setModePaiement] = useState('Carte Bancaire');
@@ -30,6 +31,11 @@ export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
+
+    if (!isAuthenticated || !currentUser) {
+      setActiveTab('login');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -215,6 +221,34 @@ export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
             Récapitulatif de Commande
           </h2>
 
+          {(!isAuthenticated || !currentUser) && (
+            <div className="p-4 bg-amber-50 border border-amber-200/80 rounded-2xl text-xs space-y-3">
+              <div className="flex items-start gap-2.5 text-amber-900 font-extrabold">
+                <UserCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>Connexion requise pour valider votre achat</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                Vous devez posséder un compte pour enregistrer votre adresse de livraison, générer votre facture et finaliser votre commande.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('login')}
+                  className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition text-center"
+                >
+                  Se connecter
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('register')}
+                  className="flex-1 py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition text-center"
+                >
+                  Créer un compte
+                </button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleCheckout} className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -276,7 +310,11 @@ export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
               disabled={loading}
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/20 transition active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Validation en cours...' : 'Valider & Payer la Commande'}
+              {loading
+                ? 'Validation en cours...'
+                : !isAuthenticated || !currentUser
+                ? 'Se connecter pour valider la commande'
+                : 'Valider & Payer la Commande'}
             </button>
           </form>
 
