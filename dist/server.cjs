@@ -327,7 +327,7 @@ var PRESIDENT_INFO = {
   telMob: "+33 672 096 455",
   email: "infosystemprosper@gmail.com",
   web: "isf.com",
-  photoUrl: "/src/assets/images/president_photo_1785842468088.jpg",
+  photoUrl: "/dist/assets/images/president_photo_1785842468088.jpg",
   message: `Chers clients, partenaires et collaborateurs,
 
 C\u2019est avec une grande fiert\xE9 que je vous souhaite la bienvenue sur la plateforme officielle d\u2019Informatique System Prosper.
@@ -1109,6 +1109,10 @@ async function startServer() {
       message: "Inscription r\xE9ussie"
     });
   });
+  app.use("/src/assets", import_express.default.static(import_path.default.join(process.cwd(), "src/assets")));
+  app.get("/favicon.ico", (req, res) => {
+    res.status(204).end();
+  });
   if (process.env.NODE_ENV !== "production") {
     const vite = await (0, import_vite.createServer)({
       server: { middlewareMode: true },
@@ -1118,7 +1122,7 @@ async function startServer() {
   } else {
     const distPath = import_path.default.join(process.cwd(), "dist");
     app.use(import_express.default.static(distPath));
-    app.get("*all", (req, res) => {
+    app.get("*", (req, res) => {
       res.sendFile(import_path.default.join(distPath, "index.html"));
     });
   }
