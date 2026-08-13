@@ -312,7 +312,7 @@ export const PRESIDENT_INFO = {
   telMob: '+33 672 096 455',
   email: 'infosystemprosper@gmail.com',
   web: 'isf.com',
-  photoUrl: '/src/assets/images/president_photo_1785842468088.jpg',
+  photoUrl: '/dist/assets/images/president_photo_1785842468088.jpg',
   message: `Chers clients, partenaires et collaborateurs,
 
 C’est avec une grande fierté que je vous souhaite la bienvenue sur la plateforme officielle d’Informatique System Prosper.
