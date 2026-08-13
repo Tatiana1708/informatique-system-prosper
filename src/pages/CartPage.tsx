@@ -230,7 +230,7 @@ export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
               <p className="text-slate-600 text-[11px] leading-relaxed">
                 Vous devez posséder un compte pour enregistrer votre adresse de livraison, générer votre facture et finaliser votre commande.
               </p>
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              {/* <div className="flex flex-col sm:flex-row gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setActiveTab('login')}
@@ -245,7 +245,7 @@ export const CartPage: React.FC<CartPageProps> = ({ setActiveTab }) => {
                 >
                   Créer un compte
                 </button>
-              </div>
+              </div> */}
             </div>
           )}
 
