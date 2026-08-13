@@ -327,7 +327,7 @@ var PRESIDENT_INFO = {
   telMob: "+33 672 096 455",
   email: "infosystemprosper@gmail.com",
   web: "isf.com",
-  photoUrl: "/dist/assets/images/president_photo_1785842468088.jpg",
+  photoUrl: "../assets/images/president_photo_1785842468088.jpg",
   message: `Chers clients, partenaires et collaborateurs,
 
 C\u2019est avec une grande fiert\xE9 que je vous souhaite la bienvenue sur la plateforme officielle d\u2019Informatique System Prosper.
