@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab, setSelectedDocTab 
           {/* Quick Legal & Info Links */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              Documents & Navigation
+              Navigation
             </h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li>
