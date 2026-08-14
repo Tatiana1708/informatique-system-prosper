@@ -415,16 +415,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className="text-left py-2 px-3 rounded-lg hover:bg-slate-100 flex items-center gap-2"
               >
-                <span>Nos Produits</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('categories');
-                  setMobileMenuOpen(false);
-                }}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-100 flex items-center gap-2"
-              >
-                <span>Catégories</span>
+                <span>Produits</span>
               </button>
               <button
                 onClick={() => {
@@ -433,7 +424,6 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 className="text-left py-2 px-3 rounded-lg bg-blue-50 text-blue-700 font-semibold flex items-center gap-2"
               >
-                <Info className="w-4 h-4 text-blue-600" />
                 <span>À propos</span>
               </button>
               <button
