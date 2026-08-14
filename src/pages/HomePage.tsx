@@ -152,7 +152,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             onClick={() => setActiveTab('produits')}
             className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
           >
-            <span>Voir tout le catalogue ({products.length})</span>
+            <span>Voir tout le catalogue</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
