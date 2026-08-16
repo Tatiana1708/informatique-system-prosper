@@ -66,6 +66,16 @@ export const Header: React.FC<HeaderProps> = ({
               <span>+33 (0)1 45 46 88 00</span>
             </span>
           </div>
+          <div className="flex items-center space-x-4 text-slate-300">
+            <span className="flex items-center gap-1.5">
+              <button
+                  id="header-admin-link"
+                  className="ml-2 px-2 py-0.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs flex items-center gap-1 transition"
+                >
+                  <span>En cours</span>
+                </button>
+            </span>
+          </div>
 
           {/* Role Switcher Badge */}
           {(currentRole === 'Admin') && (
