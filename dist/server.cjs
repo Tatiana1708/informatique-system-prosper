@@ -647,7 +647,7 @@ async function createSchemaAndSeed() {
       categorie_id VARCHAR(50) NOT NULL,
       categorie_nom VARCHAR(100) NOT NULL,
       prix DECIMAL(10,2) NOT NULL,
-      image TEXT,
+      image LONGTEXT,
       garantie VARCHAR(50),
       stock INT NOT NULL DEFAULT 0,
       disponibilite VARCHAR(50) NOT NULL,
@@ -655,6 +655,10 @@ async function createSchemaAndSeed() {
       caracteristiques JSON
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
+  try {
+    await pool.query(`ALTER TABLE products MODIFY COLUMN image LONGTEXT;`);
+  } catch {
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS clients (
       id VARCHAR(50) PRIMARY KEY,
@@ -782,7 +786,8 @@ var ordersStore = [...MOCK_ORDERS];
 async function startServer() {
   const app = (0, import_express.default)();
   const PORT = 3e3;
-  app.use(import_express.default.json());
+  app.use(import_express.default.json({ limit: "50mb" }));
+  app.use(import_express.default.urlencoded({ extended: true, limit: "50mb" }));
   const dbStatus = await initMySQLConnection();
   console.log(`[DB Status] Mode: ${dbStatus.mode.toUpperCase()}${dbStatus.error ? " (" + dbStatus.error + ")" : ""}`);
   app.get("/api/db/status", (req, res) => {
