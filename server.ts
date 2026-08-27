@@ -28,7 +28,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // Initialize MySQL Connection (gracefully fallbacks to in-memory if unconfigured or error)
   const dbStatus = await initMySQLConnection();

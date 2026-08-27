@@ -155,7 +155,7 @@ async function createSchemaAndSeed() {
       categorie_id VARCHAR(50) NOT NULL,
       categorie_nom VARCHAR(100) NOT NULL,
       prix DECIMAL(10,2) NOT NULL,
-      image TEXT,
+      image LONGTEXT,
       garantie VARCHAR(50),
       stock INT NOT NULL DEFAULT 0,
       disponibilite VARCHAR(50) NOT NULL,
@@ -164,6 +164,13 @@ async function createSchemaAndSeed() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
 
+  // Ensure image column is LONGTEXT for existing databases
+  try {
+    await pool.query(`ALTER TABLE products MODIFY COLUMN image LONGTEXT;`);
+  } catch {
+    // Ignore if table does not exist or already updated
+  }
+  
   // Table Clients
   await pool.query(`
     CREATE TABLE IF NOT EXISTS clients (

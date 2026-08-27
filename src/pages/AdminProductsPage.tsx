@@ -64,20 +64,58 @@ export const AdminProductsPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to optimize and compress image before uploading
+  const processImageFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner un fichier image valide (JPG, PNG, WebP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let { width, height } = img;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          if (width > height) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          } else {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setFormData((prev) => ({ ...prev, image: compressedDataUrl }));
+        } else {
+          setFormData((prev) => ({ ...prev, image: result }));
+        }
+      };
+      img.onerror = () => {
+        setFormData((prev) => ({ ...prev, image: result }));
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 8 * 1024 * 1024) {
-        alert('L\'image choisie est trop volumineuse (maximum 8 Mo).');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setFormData((prev) => ({ ...prev, image: reader.result as string }));
-        }
-      };
-      reader.readAsDataURL(file);
+      processImageFile(file);
     }
   };
 
@@ -96,17 +134,7 @@ export const AdminProductsPage: React.FC = () => {
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 8 * 1024 * 1024) {
-        alert('L\'image choisie est trop volumineuse (maximum 8 Mo).');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (reader.result) {
-          setFormData((prev) => ({ ...prev, image: reader.result as string }));
-        }
-      };
-      reader.readAsDataURL(file);
+      processImageFile(file);
     }
   };
 
@@ -159,15 +187,25 @@ export const AdminProductsPage: React.FC = () => {
     setShowModal(true);
   };
 
+  const [saving, setSaving] = useState(false);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingProduct) {
-      await api.updateProduct(editingProduct.id, formData);
-    } else {
-      await api.createProduct(formData);
+    setSaving(true);
+    try {
+      if (editingProduct) {
+        await api.updateProduct(editingProduct.id, formData);
+      } else {
+        await api.createProduct(formData);
+      }
+      setShowModal(false);
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Erreur lors de l\'enregistrement du produit');
+    } finally {
+      setSaving(false);
     }
-    setShowModal(false);
-    loadData();
   };
 
   const handleDelete = async (id: string) => {
@@ -613,16 +651,19 @@ export const AdminProductsPage: React.FC = () => {
               <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
+                  disabled={saving}
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl disabled:opacity-50 transition"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md"
+                  disabled={saving}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md disabled:opacity-50 transition flex items-center gap-1.5"
                 >
-                  Enregistrer
+                  {saving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{saving ? 'Enregistrement...' : 'Enregistrer'}</span>
                 </button>
               </div>
             </form>
