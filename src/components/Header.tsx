@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
             <span className="hidden md:flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>+33 (0)1 45 46 88 00</span>
+              <span>+33 672 096 455</span>
             </span>
           </div>
           <div className="flex items-center space-x-4 text-slate-300">
