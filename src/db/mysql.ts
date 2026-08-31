@@ -26,12 +26,17 @@ let isConnected = false;
 let connectionError: string | undefined = undefined;
 
 export function getDbConfig() {
+  let dbName = process.env.MYSQL_DATABASE || 'informatique_system_prosper';
+  // 'sys', 'mysql', 'information_schema', 'performance_schema' are restricted system databases
+  if (['sys', 'mysql', 'information_schema', 'performance_schema'].includes(dbName.toLowerCase())) {
+    dbName = 'test';
+  }
   return {
     host: process.env.MYSQL_HOST || 'localhost',
     port: Number(process.env.MYSQL_PORT) || 3306,
     user: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE || 'informatique_system_prosper',
+    database: dbName,
   };
 }
 
@@ -130,9 +135,17 @@ async function createSchemaAndSeed() {
       email VARCHAR(150) NOT NULL UNIQUE,
       role VARCHAR(50) NOT NULL DEFAULT 'Client',
       statut VARCHAR(50) NOT NULL DEFAULT 'Actif',
-      date_inscription VARCHAR(50) NOT NULL
+      date_inscription VARCHAR(50) NOT NULL,
+      is_email_verified BOOLEAN NOT NULL DEFAULT FALSE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
+
+  // Ensure is_email_verified column exists
+  try {
+    await pool.query(`ALTER TABLE users ADD COLUMN is_email_verified BOOLEAN NOT NULL DEFAULT FALSE;`);
+  } catch {
+    // Ignore if column already exists
+  }
 
   // Table Categories
   await pool.query(`
@@ -170,7 +183,7 @@ async function createSchemaAndSeed() {
   } catch {
     // Ignore if table does not exist or already updated
   }
-  
+
   // Table Clients
   await pool.query(`
     CREATE TABLE IF NOT EXISTS clients (
@@ -224,40 +237,35 @@ async function createSchemaAndSeed() {
     }
   }
 
-  const [catRows]: any = await pool.query('SELECT COUNT(*) as count FROM categories');
-  if (catRows[0].count === 0) {
-    console.log('[MySQL] Seeding initial categories...');
-    for (const c of MOCK_CATEGORIES) {
-      await pool.query(
-        'INSERT INTO categories (id, nom, description, statut, date_creation) VALUES (?, ?, ?, ?, ?)',
-        [c.id, c.nom, c.description, c.statut, c.dateCreation]
-      );
-    }
+  console.log('[MySQL] Ensuring initial categories and products exist...');
+  for (const c of MOCK_CATEGORIES) {
+    await pool.query(
+      'INSERT IGNORE INTO categories (id, nom, description, statut, date_creation) VALUES (?, ?, ?, ?, ?)',
+      [c.id, c.nom, c.description, c.statut, c.dateCreation]
+    );
   }
 
-  const [prodRows]: any = await pool.query('SELECT COUNT(*) as count FROM products');
-  if (prodRows[0].count === 0) {
-    console.log('[MySQL] Seeding initial products...');
-    for (const p of MOCK_PRODUCTS) {
-      await pool.query(
-        'INSERT INTO products (id, nom, marque, modele, categorie_id, categorie_nom, prix, image, garantie, stock, disponibilite, description, caracteristiques) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          p.id,
-          p.nom,
-          p.marque,
-          p.modele,
-          p.categorieId,
-          p.categorieNom,
-          p.prix,
-          p.image,
-          p.garantie,
-          p.stock,
-          p.disponibilite,
-          p.description,
-          JSON.stringify(p.caracteristiques),
-        ]
-      );
-    }
+  for (const p of MOCK_PRODUCTS) {
+    await pool.query(
+      `INSERT INTO products (id, nom, marque, modele, categorie_id, categorie_nom, prix, image, garantie, stock, disponibilite, description, caracteristiques)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE image = VALUES(image), prix = VALUES(prix), description = VALUES(description), caracteristiques = VALUES(caracteristiques)`,
+      [
+        p.id,
+        p.nom,
+        p.marque,
+        p.modele,
+        p.categorieId,
+        p.categorieNom,
+        p.prix,
+        p.image,
+        p.garantie,
+        p.stock,
+        p.disponibilite,
+        p.description,
+        JSON.stringify(p.caracteristiques),
+      ]
+    );
   }
 
   const [clientRows]: any = await pool.query('SELECT COUNT(*) as count FROM clients');

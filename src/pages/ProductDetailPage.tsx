@@ -123,6 +123,70 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </span>
             </div>
 
+            {/* Volume Promo Pricing if HP E786DN */}
+            {produit.nom.includes('E786DN') && (
+              <div className="p-4 bg-linear-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                    🔥 Tarifs dégressifs Pro (Offre Spéciale)
+                  </span>
+                  <span className="text-[11px] font-bold text-amber-700 bg-amber-200/70 px-2 py-0.5 rounded-md">
+                    Stock Limité
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setQuantite(1)}
+                    className={`p-2 rounded-xl border transition ${
+                      quantite === 1
+                        ? 'bg-white border-amber-500 shadow-xs ring-2 ring-amber-400 font-extrabold'
+                        : 'bg-white/70 border-amber-200 font-medium'
+                    }`}
+                  >
+                    <div className="text-slate-500 text-[10px]">1 unité</div>
+                    <div className="text-slate-900 font-bold text-sm">2 915 €</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuantite(3)}
+                    className={`p-2 rounded-xl border transition ${
+                      quantite === 3
+                        ? 'bg-white border-amber-500 shadow-xs ring-2 ring-amber-400 font-extrabold'
+                        : 'bg-white/70 border-amber-200 font-medium'
+                    }`}
+                  >
+                    <div className="text-slate-500 text-[10px]">Lot de 3 (x3)</div>
+                    <div className="text-amber-900 font-bold text-sm">2 865 €<span className="text-[10px] font-normal">/u</span></div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuantite(5)}
+                    className={`p-2 rounded-xl border transition ${
+                      quantite === 5
+                        ? 'bg-white border-amber-500 shadow-xs ring-2 ring-amber-400 font-extrabold'
+                        : 'bg-white/70 border-amber-200 font-medium'
+                    }`}
+                  >
+                    <div className="text-slate-500 text-[10px]">Lot de 5 (x5)</div>
+                    <div className="text-amber-900 font-bold text-sm">2 815 €<span className="text-[10px] font-normal">/u</span></div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuantite(10)}
+                    className={`p-2 rounded-xl border transition ${
+                      quantite >= 10
+                        ? 'bg-white border-amber-500 shadow-xs ring-2 ring-amber-400 font-extrabold'
+                        : 'bg-white/70 border-amber-200 font-medium'
+                    }`}
+                  >
+                    <div className="text-slate-500 text-[10px]">Lot de 10 (x10)</div>
+                    <div className="text-amber-900 font-bold text-sm">2 765 €<span className="text-[10px] font-normal">/u</span></div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Description */}
             <div>
               <h3 className="text-xs font-bold uppercase text-slate-400 tracking-wider mb-1.5">
