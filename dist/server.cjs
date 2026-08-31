@@ -112,6 +112,46 @@ var MOCK_CATEGORIES = [
     statut: "Actif",
     dateCreation: "2024-01-20",
     nombreProduits: 1
+  },
+  {
+    id: "cat-6",
+    nom: "Imprimantes",
+    description: "Gamme compl\xE8te d'imprimantes jet d'encre, laser, multifonctions tout-en-un et sp\xE9cialis\xE9es pour entreprises.",
+    statut: "Actif",
+    dateCreation: "2024-02-01",
+    nombreProduits: 4
+  },
+  {
+    id: "cat-7",
+    nom: "Imprimantes Jet d'encre",
+    description: "Imprimantes jet d'encre haute r\xE9solution, photo professionnelle et r\xE9servoirs rechargeables \xE9conomiques.",
+    statut: "Actif",
+    dateCreation: "2024-02-01",
+    nombreProduits: 1
+  },
+  {
+    id: "cat-8",
+    nom: "Imprimantes Laser",
+    description: "Imprimantes laser monochromes et couleur haute vitesse, robustes pour volumes d'impression \xE9lev\xE9s.",
+    statut: "Actif",
+    dateCreation: "2024-02-01",
+    nombreProduits: 1
+  },
+  {
+    id: "cat-9",
+    nom: "Imprimantes Multifonctions (ou Tout-en-un)",
+    description: "Syst\xE8mes d'impression tout-en-un A3 et A4 avec impression, copie, num\xE9risation recto-verso et connectivit\xE9 r\xE9seau.",
+    statut: "Actif",
+    dateCreation: "2024-02-01",
+    nombreProduits: 1
+  },
+  {
+    id: "cat-10",
+    nom: "Imprimantes Sp\xE9cialis\xE9es",
+    description: "Imprimantes d'\xE9tiquettes, traceurs grand format, impression thermique de tickets et imprimantes de badges.",
+    statut: "Actif",
+    dateCreation: "2024-02-01",
+    nombreProduits: 1
   }
 ];
 var MOCK_PRODUCTS = [
@@ -192,6 +232,31 @@ var MOCK_PRODUCTS = [
   },
   {
     id: "p6",
+    nom: "HP A3 E786DN",
+    marque: "HP",
+    modele: "Color LaserJet Managed MFP E786dn",
+    categorieId: "cat-9",
+    categorieNom: "Imprimantes Multifonctions (ou Tout-en-un)",
+    prix: 2915,
+    image: "/hp_a3_e786dn.jpg",
+    garantie: "3 ans sur site HP",
+    stock: 8,
+    disponibilite: "En stock",
+    description: "Imprimante multifonction A3 couleur professionnelle d'entreprise haute performance. Solution compl\xE8te pour groupe de travail exigeant avec num\xE9risation monopasse, \xE9cran tactile interactif et bacs grande capacit\xE9 int\xE9gr\xE9s.",
+    caracteristiques: [
+      "Bac universel 100 feuilles A3",
+      "Bac universel 520 feuilles A3",
+      "Bac universel 520 feuilles A4",
+      "Bac de sortie 500 feuilles",
+      "Chargeur automatique de documents 200 feuilles",
+      "Num\xE9risation recto-verso en un seul passage, jusqu\u2019au format A3",
+      "Port h\xF4te USB 2.0 / 3.0",
+      "Port p\xE9riph\xE9rique USB 3.0",
+      "Connectivit\xE9 Ethernet"
+    ]
+  },
+  {
+    id: "p7",
     nom: "Routeur Wi-Fi 6E TP-Link Archer AXE75",
     marque: "TP-Link",
     modele: "AXE75",
@@ -546,12 +611,16 @@ var pool = null;
 var isConnected = false;
 var connectionError = void 0;
 function getDbConfig() {
+  let dbName = process.env.MYSQL_DATABASE || "informatique_system_prosper";
+  if (["sys", "mysql", "information_schema", "performance_schema"].includes(dbName.toLowerCase())) {
+    dbName = "test";
+  }
   return {
     host: process.env.MYSQL_HOST || "localhost",
     port: Number(process.env.MYSQL_PORT) || 3306,
     user: process.env.MYSQL_USER || "root",
     password: process.env.MYSQL_PASSWORD || "",
-    database: process.env.MYSQL_DATABASE || "informatique_system_prosper"
+    database: dbName
   };
 }
 async function initMySQLConnection() {
@@ -626,9 +695,14 @@ async function createSchemaAndSeed() {
       email VARCHAR(150) NOT NULL UNIQUE,
       role VARCHAR(50) NOT NULL DEFAULT 'Client',
       statut VARCHAR(50) NOT NULL DEFAULT 'Actif',
-      date_inscription VARCHAR(50) NOT NULL
+      date_inscription VARCHAR(50) NOT NULL,
+      is_email_verified BOOLEAN NOT NULL DEFAULT FALSE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
+  try {
+    await pool.query(`ALTER TABLE users ADD COLUMN is_email_verified BOOLEAN NOT NULL DEFAULT FALSE;`);
+  } catch {
+  }
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id VARCHAR(50) PRIMARY KEY,
@@ -704,39 +778,34 @@ async function createSchemaAndSeed() {
       );
     }
   }
-  const [catRows] = await pool.query("SELECT COUNT(*) as count FROM categories");
-  if (catRows[0].count === 0) {
-    console.log("[MySQL] Seeding initial categories...");
-    for (const c of MOCK_CATEGORIES) {
-      await pool.query(
-        "INSERT INTO categories (id, nom, description, statut, date_creation) VALUES (?, ?, ?, ?, ?)",
-        [c.id, c.nom, c.description, c.statut, c.dateCreation]
-      );
-    }
+  console.log("[MySQL] Ensuring initial categories and products exist...");
+  for (const c of MOCK_CATEGORIES) {
+    await pool.query(
+      "INSERT IGNORE INTO categories (id, nom, description, statut, date_creation) VALUES (?, ?, ?, ?, ?)",
+      [c.id, c.nom, c.description, c.statut, c.dateCreation]
+    );
   }
-  const [prodRows] = await pool.query("SELECT COUNT(*) as count FROM products");
-  if (prodRows[0].count === 0) {
-    console.log("[MySQL] Seeding initial products...");
-    for (const p of MOCK_PRODUCTS) {
-      await pool.query(
-        "INSERT INTO products (id, nom, marque, modele, categorie_id, categorie_nom, prix, image, garantie, stock, disponibilite, description, caracteristiques) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-          p.id,
-          p.nom,
-          p.marque,
-          p.modele,
-          p.categorieId,
-          p.categorieNom,
-          p.prix,
-          p.image,
-          p.garantie,
-          p.stock,
-          p.disponibilite,
-          p.description,
-          JSON.stringify(p.caracteristiques)
-        ]
-      );
-    }
+  for (const p of MOCK_PRODUCTS) {
+    await pool.query(
+      `INSERT INTO products (id, nom, marque, modele, categorie_id, categorie_nom, prix, image, garantie, stock, disponibilite, description, caracteristiques)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE image = VALUES(image), prix = VALUES(prix), description = VALUES(description), caracteristiques = VALUES(caracteristiques)`,
+      [
+        p.id,
+        p.nom,
+        p.marque,
+        p.modele,
+        p.categorieId,
+        p.categorieNom,
+        p.prix,
+        p.image,
+        p.garantie,
+        p.stock,
+        p.disponibilite,
+        p.description,
+        JSON.stringify(p.caracteristiques)
+      ]
+    );
   }
   const [clientRows] = await pool.query("SELECT COUNT(*) as count FROM clients");
   if (clientRows[0].count === 0) {
