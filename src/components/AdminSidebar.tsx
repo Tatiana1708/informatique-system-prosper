@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ArrowLeft,
   Briefcase,
+  Database,
   FolderTree,
   LayoutDashboard,
   Package,
@@ -26,6 +27,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const menuItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+    // { id: 'database', label: 'Base de Données', icon: Database },
     { id: 'utilisateurs', label: 'Gestion Utilisateurs', icon: Users },
     { id: 'produits', label: 'Gestion Produits', icon: Package },
     { id: 'commandes', label: 'Gestion Commandes', icon: ShoppingBag },

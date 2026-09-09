@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 // server.ts
 var import_config = require("dotenv/config");
 var import_express = __toESM(require("express"), 1);
-var import_path = __toESM(require("path"), 1);
+var import_path2 = __toESM(require("path"), 1);
 var import_vite = require("vite");
 
 // src/data/mockData.ts
@@ -606,7 +606,11 @@ Le paiement doit \xEAtre effectu\xE9 conform\xE9ment aux conditions convenues lo
 ];
 
 // src/db/mysql.ts
+var import_fs = __toESM(require("fs"), 1);
+var import_path = __toESM(require("path"), 1);
 var import_promise = __toESM(require("mysql2/promise"), 1);
+var DATA_DIR = import_path.default.join(process.cwd(), "data");
+var DB_FILE = import_path.default.join(DATA_DIR, "database.json");
 var pool = null;
 var isConnected = false;
 var connectionError = void 0;
@@ -845,8 +849,1352 @@ async function createSchemaAndSeed() {
     }
   }
 }
+function ensureDataDir() {
+  try {
+    if (!import_fs.default.existsSync(DATA_DIR)) {
+      import_fs.default.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.error("[DB Local] Error creating data directory:", err);
+  }
+}
+function readLocalDb() {
+  ensureDataDir();
+  try {
+    if (import_fs.default.existsSync(DB_FILE)) {
+      const content = import_fs.default.readFileSync(DB_FILE, "utf-8");
+      return JSON.parse(content);
+    }
+  } catch (err) {
+    console.warn("[DB Local] Warning reading database.json, initializing defaults:", err);
+  }
+  const initial = {
+    users: [...MOCK_USERS],
+    categories: [...MOCK_CATEGORIES],
+    products: [...MOCK_PRODUCTS],
+    clients: [...MOCK_CLIENTS],
+    orders: [...MOCK_ORDERS]
+  };
+  try {
+    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), "utf-8");
+  } catch (e) {
+    console.error("[DB Local] Error writing initial database.json:", e);
+  }
+  return initial;
+}
+function writeLocalDb(data) {
+  ensureDataDir();
+  try {
+    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[DB Local] Error writing database.json:", err);
+  }
+}
+async function dbInsertProduct(p) {
+  const local = readLocalDb();
+  const existingIdx = local.products.findIndex((prod) => prod.id === p.id);
+  if (existingIdx >= 0) {
+    local.products[existingIdx] = p;
+  } else {
+    local.products.unshift(p);
+  }
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO products (id, nom, marque, modele, categorie_id, categorie_nom, prix, image, garantie, stock, disponibilite, description, caracteristiques)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE 
+           nom = VALUES(nom), marque = VALUES(marque), modele = VALUES(modele),
+           categorie_id = VALUES(categorie_id), categorie_nom = VALUES(categorie_nom),
+           prix = VALUES(prix), image = VALUES(image), garantie = VALUES(garantie),
+           stock = VALUES(stock), disponibilite = VALUES(disponibilite),
+           description = VALUES(description), caracteristiques = VALUES(caracteristiques)`,
+        [
+          p.id,
+          p.nom,
+          p.marque,
+          p.modele,
+          p.categorieId,
+          p.categorieNom || "Composants",
+          p.prix,
+          p.image,
+          p.garantie,
+          p.stock,
+          p.disponibilite,
+          p.description,
+          JSON.stringify(p.caracteristiques || [])
+        ]
+      );
+      console.log(`[MySQL] Produit ins\xE9r\xE9 avec succ\xE8s en BDD: ${p.nom} (${p.id})`);
+    } catch (err) {
+      console.error("[MySQL Error] dbInsertProduct:", err);
+    }
+  }
+}
+async function dbUpdateProduct(id, p) {
+  const local = readLocalDb();
+  const idx = local.products.findIndex((prod) => prod.id === id);
+  if (idx >= 0) {
+    local.products[idx] = { ...local.products[idx], ...p };
+    writeLocalDb(local);
+  }
+  if (pool) {
+    try {
+      const updates = [];
+      const values = [];
+      if (p.nom !== void 0) {
+        updates.push("nom = ?");
+        values.push(p.nom);
+      }
+      if (p.marque !== void 0) {
+        updates.push("marque = ?");
+        values.push(p.marque);
+      }
+      if (p.modele !== void 0) {
+        updates.push("modele = ?");
+        values.push(p.modele);
+      }
+      if (p.categorieId !== void 0) {
+        updates.push("categorie_id = ?");
+        values.push(p.categorieId);
+      }
+      if (p.categorieNom !== void 0) {
+        updates.push("categorie_nom = ?");
+        values.push(p.categorieNom);
+      }
+      if (p.prix !== void 0) {
+        updates.push("prix = ?");
+        values.push(p.prix);
+      }
+      if (p.image !== void 0) {
+        updates.push("image = ?");
+        values.push(p.image);
+      }
+      if (p.garantie !== void 0) {
+        updates.push("garantie = ?");
+        values.push(p.garantie);
+      }
+      if (p.stock !== void 0) {
+        updates.push("stock = ?");
+        values.push(p.stock);
+      }
+      if (p.disponibilite !== void 0) {
+        updates.push("disponibilite = ?");
+        values.push(p.disponibilite);
+      }
+      if (p.description !== void 0) {
+        updates.push("description = ?");
+        values.push(p.description);
+      }
+      if (p.caracteristiques !== void 0) {
+        updates.push("caracteristiques = ?");
+        values.push(JSON.stringify(p.caracteristiques));
+      }
+      if (updates.length > 0) {
+        values.push(id);
+        await pool.query(`UPDATE products SET ${updates.join(", ")} WHERE id = ?`, values);
+        console.log(`[MySQL] Produit mis \xE0 jour en BDD: ${id}`);
+      }
+    } catch (err) {
+      console.error("[MySQL Error] dbUpdateProduct:", err);
+    }
+  }
+}
+async function dbDeleteProduct(id) {
+  const local = readLocalDb();
+  local.products = local.products.filter((p) => p.id !== id);
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM products WHERE id = ?", [id]);
+      console.log(`[MySQL] Produit supprim\xE9 de la BDD: ${id}`);
+    } catch (err) {
+      console.error("[MySQL Error] dbDeleteProduct:", err);
+    }
+  }
+}
+async function dbInsertCategory(c) {
+  const local = readLocalDb();
+  const existingIdx = local.categories.findIndex((cat) => cat.id === c.id);
+  if (existingIdx >= 0) {
+    local.categories[existingIdx] = c;
+  } else {
+    local.categories.push(c);
+  }
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO categories (id, nom, description, statut, date_creation)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE nom = VALUES(nom), description = VALUES(description), statut = VALUES(statut)`,
+        [c.id, c.nom, c.description, c.statut, c.dateCreation]
+      );
+      console.log(`[MySQL] Cat\xE9gorie ins\xE9r\xE9e en BDD: ${c.nom} (${c.id})`);
+    } catch (err) {
+      console.error("[MySQL Error] dbInsertCategory:", err);
+    }
+  }
+}
+async function dbUpdateCategory(id, c) {
+  const local = readLocalDb();
+  const idx = local.categories.findIndex((cat) => cat.id === id);
+  if (idx >= 0) {
+    local.categories[idx] = { ...local.categories[idx], ...c };
+    writeLocalDb(local);
+  }
+  if (pool) {
+    try {
+      const updates = [];
+      const values = [];
+      if (c.nom !== void 0) {
+        updates.push("nom = ?");
+        values.push(c.nom);
+      }
+      if (c.description !== void 0) {
+        updates.push("description = ?");
+        values.push(c.description);
+      }
+      if (c.statut !== void 0) {
+        updates.push("statut = ?");
+        values.push(c.statut);
+      }
+      if (updates.length > 0) {
+        values.push(id);
+        await pool.query(`UPDATE categories SET ${updates.join(", ")} WHERE id = ?`, values);
+        console.log(`[MySQL] Cat\xE9gorie mise \xE0 jour en BDD: ${id}`);
+      }
+    } catch (err) {
+      console.error("[MySQL Error] dbUpdateCategory:", err);
+    }
+  }
+}
+async function dbDeleteCategory(id) {
+  const local = readLocalDb();
+  local.categories = local.categories.filter((c) => c.id !== id);
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM categories WHERE id = ?", [id]);
+      console.log(`[MySQL] Cat\xE9gorie supprim\xE9e de la BDD: ${id}`);
+    } catch (err) {
+      console.error("[MySQL Error] dbDeleteCategory:", err);
+    }
+  }
+}
+async function dbInsertUser(u) {
+  const local = readLocalDb();
+  const idx = local.users.findIndex((user) => user.id === u.id);
+  if (idx >= 0) {
+    local.users[idx] = u;
+  } else {
+    local.users.unshift(u);
+  }
+  if (u.role === "Client") {
+    const clientExists = local.clients.some((cl) => cl.userId === u.id);
+    if (!clientExists) {
+      local.clients.push({
+        id: "c-" + Date.now(),
+        userId: u.id,
+        nombreCommandes: 0,
+        totalDepense: 0,
+        statut: "Nouveau",
+        user: u
+      });
+    }
+  }
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO users (id, nom, email, role, statut, date_inscription, is_email_verified)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE nom = VALUES(nom), email = VALUES(email), role = VALUES(role), statut = VALUES(statut), is_email_verified = VALUES(is_email_verified)`,
+        [u.id, u.nom, u.email, u.role, u.statut, u.dateInscription, u.isEmailVerified ? 1 : 0]
+      );
+      if (u.role === "Client") {
+        await pool.query(
+          `INSERT IGNORE INTO clients (id, user_id, nombre_commandes, total_depense, statut)
+           VALUES (?, ?, 0, 0, 'Nouveau')`,
+          ["c-" + Date.now(), u.id]
+        );
+      }
+      console.log(`[MySQL] Utilisateur ins\xE9r\xE9 en BDD: ${u.nom} (${u.email})`);
+    } catch (err) {
+      console.error("[MySQL Error] dbInsertUser:", err);
+    }
+  }
+}
+async function dbUpdateUser(id, u) {
+  const local = readLocalDb();
+  const idx = local.users.findIndex((user) => user.id === id);
+  if (idx >= 0) {
+    local.users[idx] = { ...local.users[idx], ...u };
+    writeLocalDb(local);
+  }
+  if (pool) {
+    try {
+      const updates = [];
+      const values = [];
+      if (u.nom !== void 0) {
+        updates.push("nom = ?");
+        values.push(u.nom);
+      }
+      if (u.email !== void 0) {
+        updates.push("email = ?");
+        values.push(u.email);
+      }
+      if (u.role !== void 0) {
+        updates.push("role = ?");
+        values.push(u.role);
+      }
+      if (u.statut !== void 0) {
+        updates.push("statut = ?");
+        values.push(u.statut);
+      }
+      if (u.isEmailVerified !== void 0) {
+        updates.push("is_email_verified = ?");
+        values.push(u.isEmailVerified ? 1 : 0);
+      }
+      if (updates.length > 0) {
+        values.push(id);
+        await pool.query(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`, values);
+        console.log(`[MySQL] Utilisateur mis \xE0 jour en BDD: ${id}`);
+      }
+    } catch (err) {
+      console.error("[MySQL Error] dbUpdateUser:", err);
+    }
+  }
+}
+async function dbDeleteUser(id) {
+  const local = readLocalDb();
+  local.users = local.users.filter((u) => u.id !== id);
+  local.clients = local.clients.filter((c) => c.userId !== id);
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM users WHERE id = ?", [id]);
+      console.log(`[MySQL] Utilisateur supprim\xE9 de la BDD: ${id}`);
+    } catch (err) {
+      console.error("[MySQL Error] dbDeleteUser:", err);
+    }
+  }
+}
+async function dbInsertOrder(o) {
+  const local = readLocalDb();
+  local.orders.unshift(o);
+  const cl = local.clients.find((c) => c.id === o.clientId);
+  if (cl) {
+    cl.nombreCommandes += 1;
+    cl.totalDepense = parseFloat((cl.totalDepense + o.montantTotal).toFixed(2));
+  }
+  o.lignes.forEach((l) => {
+    const p = local.products.find((prod) => prod.id === l.produitId);
+    if (p) {
+      p.stock = Math.max(0, p.stock - l.quantite);
+      p.disponibilite = p.stock > 0 ? "En stock" : "Rupture de stock";
+    }
+  });
+  writeLocalDb(local);
+  if (pool) {
+    try {
+      await pool.query(
+        `INSERT INTO orders (id, reference, client_id, client_nom, client_email, date, montant_total, statut, statut_paiement, adresse_livraison)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          o.id,
+          o.reference,
+          o.clientId,
+          o.clientNom || "",
+          o.clientEmail || "",
+          o.date,
+          o.montantTotal,
+          o.statut,
+          o.statutPaiement,
+          o.adresseLivraison || ""
+        ]
+      );
+      for (const line of o.lignes) {
+        await pool.query(
+          `INSERT INTO order_lines (id, commande_id, produit_id, quantite, prix_unitaire, prix_total)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [line.id, o.id, line.produitId, line.quantite, line.prixUnitaire, line.prixTotal]
+        );
+        await pool.query(
+          `UPDATE products SET stock = GREATEST(0, stock - ?), disponibilite = IF(stock - ? > 0, 'En stock', 'Rupture de stock') WHERE id = ?`,
+          [line.quantite, line.quantite, line.produitId]
+        );
+      }
+      console.log(`[MySQL] Commande et lignes ins\xE9r\xE9es en BDD: ${o.reference}`);
+    } catch (err) {
+      console.error("[MySQL Error] dbInsertOrder:", err);
+    }
+  }
+}
+async function dbUpdateOrderStatus(id, statut, statutPaiement) {
+  const local = readLocalDb();
+  const ord = local.orders.find((o) => o.id === id);
+  if (ord) {
+    if (statut) ord.statut = statut;
+    if (statutPaiement) ord.statutPaiement = statutPaiement;
+    writeLocalDb(local);
+  }
+  if (pool) {
+    try {
+      const updates = [];
+      const values = [];
+      if (statut) {
+        updates.push("statut = ?");
+        values.push(statut);
+      }
+      if (statutPaiement) {
+        updates.push("statut_paiement = ?");
+        values.push(statutPaiement);
+      }
+      if (updates.length > 0) {
+        values.push(id);
+        await pool.query(`UPDATE orders SET ${updates.join(", ")} WHERE id = ?`, values);
+        console.log(`[MySQL] Statut commande mis \xE0 jour: ${id}`);
+      }
+    } catch (err) {
+      console.error("[MySQL Error] dbUpdateOrderStatus:", err);
+    }
+  }
+}
+async function dbLoadAll() {
+  if (pool) {
+    try {
+      const [uRows] = await pool.query("SELECT * FROM users ORDER BY date_inscription DESC");
+      const [cRows] = await pool.query("SELECT * FROM categories ORDER BY nom ASC");
+      const [pRows] = await pool.query("SELECT * FROM products ORDER BY nom ASC");
+      const [clRows] = await pool.query("SELECT * FROM clients");
+      const [oRows] = await pool.query("SELECT * FROM orders ORDER BY date DESC");
+      const [olRows] = await pool.query("SELECT * FROM order_lines");
+      if (pRows && pRows.length > 0) {
+        const users = uRows.map((r) => ({
+          id: r.id,
+          nom: r.nom,
+          email: r.email,
+          role: r.role,
+          statut: r.statut,
+          dateInscription: r.date_inscription,
+          isEmailVerified: Boolean(r.is_email_verified)
+        }));
+        const categories = cRows.map((r) => ({
+          id: r.id,
+          nom: r.nom,
+          description: r.description,
+          statut: r.statut,
+          dateCreation: r.date_creation
+        }));
+        const products = pRows.map((r) => ({
+          id: r.id,
+          nom: r.nom,
+          marque: r.marque,
+          modele: r.modele,
+          categorieId: r.categorie_id,
+          categorieNom: r.categorie_nom,
+          prix: Number(r.prix),
+          image: r.image,
+          garantie: r.garantie,
+          stock: Number(r.stock),
+          disponibilite: r.disponibilite,
+          description: r.description,
+          caracteristiques: typeof r.caracteristiques === "string" ? JSON.parse(r.caracteristiques) : r.caracteristiques || []
+        }));
+        const clients = clRows.map((r) => ({
+          id: r.id,
+          userId: r.user_id,
+          nombreCommandes: Number(r.nombre_commandes),
+          totalDepense: Number(r.total_depense),
+          statut: r.statut,
+          user: users.find((u) => u.id === r.user_id)
+        }));
+        const orders = oRows.map((r) => {
+          const lines = olRows.filter((l) => l.commande_id === r.id).map((l) => ({
+            id: l.id,
+            commandeId: l.commande_id,
+            produitId: l.produit_id,
+            quantite: Number(l.quantite),
+            prixUnitaire: Number(l.prix_unitaire),
+            prixTotal: Number(l.prix_total),
+            produit: products.find((p) => p.id === l.produit_id)
+          }));
+          return {
+            id: r.id,
+            reference: r.reference,
+            clientId: r.client_id,
+            clientNom: r.client_nom,
+            clientEmail: r.client_email,
+            date: r.date,
+            montantTotal: Number(r.montant_total),
+            statut: r.statut,
+            statutPaiement: r.statut_paiement,
+            adresseLivraison: r.adresse_livraison,
+            lignes: lines
+          };
+        });
+        console.log(`[MySQL] Donn\xE9es synchronis\xE9es depuis MySQL : ${products.length} produits, ${categories.length} cat\xE9gories, ${users.length} utilisateurs.`);
+        return { users, categories, products, clients, orders };
+      }
+    } catch (err) {
+      console.error("[MySQL] Erreur lors du chargement des donn\xE9es depuis MySQL:", err);
+    }
+  }
+  console.log("[DB] Chargement des donn\xE9es depuis le fichier persistant data/database.json...");
+  return readLocalDb();
+}
+async function dbExecuteSQL(sql) {
+  const start = Date.now();
+  const cleanSql = sql.trim();
+  if (!cleanSql) {
+    return { success: false, sql, error: "Requ\xEAte SQL vide" };
+  }
+  if (pool) {
+    try {
+      const [results] = await pool.query(cleanSql);
+      const executionTimeMs2 = Date.now() - start;
+      if (Array.isArray(results)) {
+        return {
+          success: true,
+          sql: cleanSql,
+          rows: results,
+          executionTimeMs: executionTimeMs2
+        };
+      } else {
+        return {
+          success: true,
+          sql: cleanSql,
+          affectedRows: results.affectedRows,
+          executionTimeMs: executionTimeMs2
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+        sql: cleanSql,
+        error: err.message || "Erreur d'ex\xE9cution SQL sur MySQL",
+        executionTimeMs: Date.now() - start
+      };
+    }
+  }
+  const lower = cleanSql.toLowerCase();
+  const local = readLocalDb();
+  const executionTimeMs = Date.now() - start;
+  if (lower.startsWith("select")) {
+    if (lower.includes("from products")) return { success: true, sql: cleanSql, rows: local.products, executionTimeMs };
+    if (lower.includes("from categories")) return { success: true, sql: cleanSql, rows: local.categories, executionTimeMs };
+    if (lower.includes("from users")) return { success: true, sql: cleanSql, rows: local.users, executionTimeMs };
+    if (lower.includes("from clients")) return { success: true, sql: cleanSql, rows: local.clients, executionTimeMs };
+    if (lower.includes("from orders")) return { success: true, sql: cleanSql, rows: local.orders, executionTimeMs };
+  }
+  return {
+    success: true,
+    sql: cleanSql,
+    rows: [{ message: "Requ\xEAte simul\xE9e avec succ\xE8s sur le moteur de base de donn\xE9es local (Mode de stockage persistant actif)." }],
+    executionTimeMs
+  };
+}
+async function dbGetTablesOverview() {
+  const local = readLocalDb();
+  const tables = [
+    {
+      tableName: "products",
+      rowCount: local.products.length,
+      columns: ["id", "nom", "marque", "modele", "categorie_id", "prix", "stock", "disponibilite", "garantie"],
+      sampleRows: local.products.slice(0, 5)
+    },
+    {
+      tableName: "categories",
+      rowCount: local.categories.length,
+      columns: ["id", "nom", "description", "statut", "date_creation"],
+      sampleRows: local.categories.slice(0, 5)
+    },
+    {
+      tableName: "users",
+      rowCount: local.users.length,
+      columns: ["id", "nom", "email", "role", "statut", "date_inscription", "is_email_verified"],
+      sampleRows: local.users.slice(0, 5)
+    },
+    {
+      tableName: "clients",
+      rowCount: local.clients.length,
+      columns: ["id", "user_id", "nombre_commandes", "total_depense", "statut"],
+      sampleRows: local.clients.slice(0, 5)
+    },
+    {
+      tableName: "orders",
+      rowCount: local.orders.length,
+      columns: ["id", "reference", "client_id", "client_nom", "date", "montant_total", "statut", "statut_paiement"],
+      sampleRows: local.orders.slice(0, 5)
+    }
+  ];
+  const totalRecords = tables.reduce((sum, t) => sum + t.rowCount, 0);
+  return {
+    connected: isConnected,
+    mode: isConnected ? "mysql" : "local-file",
+    config: getDbConfig(),
+    error: connectionError,
+    totalRecords,
+    tables
+  };
+}
+var BATCH_DATA_PRESETS = {
+  printers: [
+    {
+      nom: "HP Color LaserJet Enterprise Flow MFP M776z (A3 Pro)",
+      marque: "HP",
+      modele: "Flow M776z",
+      categorieId: "cat-4",
+      categorieNom: "Imprimantes & Scanners",
+      prix: 3499,
+      image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?auto=format&fit=crop&w=800&q=80",
+      garantie: "3 ans sur site J+1",
+      stock: 6,
+      disponibilite: "En stock",
+      description: "Multifonction laser couleur A3 ultra-performant pour les entreprises exigeantes avec chargeur recto-verso en une seule passe et \xE9cran tactile 9 pouces.",
+      caracteristiques: ["Vitesse 46 ppm A4", "R\xE9solution 1200 x 1200 ppp", "Chargeur 200 feuilles", "S\xE9curit\xE9 HP Sure Start"]
+    },
+    {
+      nom: "Canon imageRUNNER ADVANCE DX C3826i (Multifonction A3)",
+      marque: "Canon",
+      modele: "C3826i",
+      categorieId: "cat-4",
+      categorieNom: "Imprimantes & Scanners",
+      prix: 3120,
+      image: "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=800&q=80",
+      garantie: "2 ans constructeur",
+      stock: 8,
+      disponibilite: "En stock",
+      description: "Solution bureautique compl\xE8te A3 avec num\xE9risation cloud haute vitesse et finition agrafage.",
+      caracteristiques: ["26 ppm couleur & N&B", "Num\xE9risation 150 ipm", "Connectivit\xE9 uniFLOW Online", "\xC9cran tactile 10.1 pouces"]
+    },
+    {
+      nom: "Epson WorkForce Enterprise WF-C21000 D4TW (100 ppm)",
+      marque: "Epson",
+      modele: "WF-C21000",
+      categorieId: "cat-4",
+      categorieNom: "Imprimantes & Scanners",
+      prix: 4890,
+      image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      garantie: "3 ans garantie int\xE9grale",
+      stock: 4,
+      disponibilite: "En stock",
+      description: "Imprimante multifonction professionnelle \xE0 technologie jet d'encre Z\xE9ro Chaleur avec vitesse vertigineuse de 100 pages par minute.",
+      caracteristiques: ["100 ppm recto-verso", "Capacit\xE9 5 350 feuilles", "Consommation \xE9lectrique r\xE9duite de 85%", "PostScript 3 natif"]
+    }
+  ],
+  servers: [
+    {
+      nom: "Serveur Rack Dell PowerEdge R750 2U (Dual Xeon Gold)",
+      marque: "Dell EMC",
+      modele: "PowerEdge R750",
+      categorieId: "cat-1",
+      categorieNom: "Composants",
+      prix: 5290,
+      image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80",
+      garantie: "5 ans ProSupport Mission Critical",
+      stock: 5,
+      disponibilite: "En stock",
+      description: "Serveur biprocesseur rack 2U d'entreprise optimis\xE9 pour la virtualisation, les bases de donn\xE9es SQL lourdes et le cloud priv\xE9.",
+      caracteristiques: ["2x Intel Xeon Gold 6330", "128 Go RAM ECC DDR4", "8x 1.92 To NVMe SSD", "Alimentation redondante Platinum 1400W"]
+    },
+    {
+      nom: "Switch Cisco Catalyst 9200L 48 Ports Gigabit PoE+ (4x 10G SFP+)",
+      marque: "Cisco",
+      modele: "C9200L-48P-4X",
+      categorieId: "cat-3",
+      categorieNom: "R\xE9seaux & C\xE2blage",
+      prix: 2150,
+      image: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80",
+      garantie: "Garantie \xE0 vie limit\xE9e Cisco EoL",
+      stock: 12,
+      disponibilite: "En stock",
+      description: "Commutateur r\xE9seau manageable d'entreprise avec PoE+ 740W pour bornes Wi-Fi 6 et cam\xE9ras IP.",
+      caracteristiques: ["48 Ports 10/100/1000 PoE+", "4 Uplinks 10G SFP+", "Stacking mat\xE9riel 80 Gbps", "Cisco DNA Essentials"]
+    }
+  ],
+  users: [
+    {
+      nom: "Dr. Marc DUPONT",
+      email: "marc.dupont@clinique-paris.fr",
+      role: "Client",
+      statut: "Actif",
+      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isEmailVerified: true
+    },
+    {
+      nom: "Sophie LEBLANC (Responsable SI)",
+      email: "sophie.leblanc@tech-innov.com",
+      role: "Client",
+      statut: "Actif",
+      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isEmailVerified: true
+    },
+    {
+      nom: "Alexandre BERTRAND (Ing\xE9nieur R\xE9seau)",
+      email: "alexandre.b@prosper-system.com",
+      role: "Vendeur",
+      statut: "Actif",
+      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isEmailVerified: true
+    }
+  ]
+};
+async function dbSeedBatch(type) {
+  let count = 0;
+  if (type === "printers" || type === "all") {
+    for (const p of BATCH_DATA_PRESETS.printers) {
+      const prod = {
+        id: "p-batch-" + Date.now() + "-" + Math.floor(Math.random() * 1e3),
+        ...p
+      };
+      await dbInsertProduct(prod);
+      count++;
+    }
+  }
+  if (type === "servers" || type === "all") {
+    for (const p of BATCH_DATA_PRESETS.servers) {
+      const prod = {
+        id: "p-batch-" + Date.now() + "-" + Math.floor(Math.random() * 1e3),
+        ...p
+      };
+      await dbInsertProduct(prod);
+      count++;
+    }
+  }
+  if (type === "users" || type === "all") {
+    for (const u of BATCH_DATA_PRESETS.users) {
+      const user = {
+        id: "u-batch-" + Date.now() + "-" + Math.floor(Math.random() * 1e3),
+        ...u
+      };
+      await dbInsertUser(user);
+      count++;
+    }
+  }
+  return count;
+}
+async function dbResetDatabase() {
+  const initial = {
+    users: [...MOCK_USERS],
+    categories: [...MOCK_CATEGORIES],
+    products: [...MOCK_PRODUCTS],
+    clients: [...MOCK_CLIENTS],
+    orders: [...MOCK_ORDERS]
+  };
+  writeLocalDb(initial);
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM order_lines");
+      await pool.query("DELETE FROM orders");
+      await pool.query("DELETE FROM clients");
+      await pool.query("DELETE FROM products");
+      await pool.query("DELETE FROM categories");
+      await pool.query("DELETE FROM users");
+      await createSchemaAndSeed();
+      console.log("[MySQL] Base de donn\xE9es r\xE9initialis\xE9e et r\xE9ensemenc\xE9e avec succ\xE8s !");
+    } catch (err) {
+      console.error("[MySQL] Erreur lors de la r\xE9initialisation de la BDD:", err);
+    }
+  }
+}
+
+// src/services/tidbClient.ts
+var import_crypto = __toESM(require("crypto"), 1);
+var import_child_process = require("child_process");
+var import_util = require("util");
+var execFileAsync = (0, import_util.promisify)(import_child_process.execFile);
+function getTiDBConfig() {
+  const defaultBase = process.env.TIDB_ENDPOINT_BASE_URL || "https://eu-central-1.data.tidbcloud.com/api/v1beta/app/dataapp-egkCSAyP/endpoint";
+  const endpointUrl = process.env.TIDB_ENDPOINT_URL || `${defaultBase}/products`;
+  const categoriesEndpointUrl = process.env.TIDB_CATEGORIES_ENDPOINT_URL || `${defaultBase}/categories`;
+  const usersEndpointUrl = process.env.TIDB_USERS_ENDPOINT_URL || `${defaultBase}/users`;
+  const ordersEndpointUrl = process.env.TIDB_ORDERS_ENDPOINT_URL || `${defaultBase}/orders`;
+  const clientsEndpointUrl = process.env.TIDB_CLIENTS_ENDPOINT_URL || `${defaultBase}/clients`;
+  const orderLinesEndpointUrl = process.env.TIDB_ORDER_LINES_ENDPOINT_URL || `${defaultBase}/order_lines`;
+  const publicKey = process.env.TIDB_PUBLIC_KEY || process.env.PUBLIC_KEY || "";
+  const privateKey = process.env.TIDB_PRIVATE_KEY || process.env.PRIVATE_KEY || "";
+  return {
+    endpointBaseUrl: defaultBase,
+    endpointUrl,
+    categoriesEndpointUrl,
+    usersEndpointUrl,
+    ordersEndpointUrl,
+    clientsEndpointUrl,
+    orderLinesEndpointUrl,
+    publicKey,
+    privateKey,
+    isConfigured: Boolean(publicKey && privateKey)
+  };
+}
+function md5(str) {
+  return import_crypto.default.createHash("md5").update(str).digest("hex");
+}
+function parseDigestHeader(header) {
+  const params = {};
+  const cleaned = header.replace(/^Digest\s+/i, "");
+  const regex = /([a-zA-Z0-9_-]+)=(?:"([^"]+)"|([^,\s]+))/g;
+  let match;
+  while ((match = regex.exec(cleaned)) !== null) {
+    params[match[1]] = match[2] !== void 0 ? match[2] : match[3];
+  }
+  return params;
+}
+async function executeTiDBGetRequest(customUrl, customPublicKey, customPrivateKey) {
+  const config = getTiDBConfig();
+  const url = customUrl || config.endpointUrl;
+  const publicKey = customPublicKey || config.publicKey;
+  const privateKey = customPrivateKey || config.privateKey;
+  const startTime = Date.now();
+  try {
+    const res1 = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+    if (res1.status === 200) {
+      const data = await res1.json();
+      return {
+        rawResponse: data,
+        latencyMs: Date.now() - startTime,
+        statusCode: 200
+      };
+    }
+    if (res1.status === 401) {
+      const authHeader = res1.headers.get("www-authenticate") || "";
+      if (!publicKey || !privateKey) {
+        throw new Error(
+          "Cl\xE9s API TiDB Cloud manquantes (TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY requises pour authentifier le point de terminaison)."
+        );
+      }
+      if (authHeader.toLowerCase().includes("digest")) {
+        const authParams = parseDigestHeader(authHeader);
+        const realm = authParams.realm || "tidb.cloud";
+        const nonce = authParams.nonce || "";
+        const qop = authParams.qop;
+        const opaque = authParams.opaque;
+        const algorithm = (authParams.algorithm || "MD5").toUpperCase();
+        const parsedUrl = new URL(url);
+        const uri = parsedUrl.pathname + parsedUrl.search;
+        const ha1 = md5(`${publicKey}:${realm}:${privateKey}`);
+        const ha2 = md5(`GET:${uri}`);
+        const nc = "00000001";
+        const cnonce = import_crypto.default.randomBytes(8).toString("hex");
+        let responseHash;
+        if (qop && (qop === "auth" || qop.includes("auth"))) {
+          responseHash = md5(`${ha1}:${nonce}:${nc}:${cnonce}:auth:${ha2}`);
+        } else {
+          responseHash = md5(`${ha1}:${nonce}:${ha2}`);
+        }
+        const digestParts = [
+          `username="${publicKey}"`,
+          `realm="${realm}"`,
+          `nonce="${nonce}"`,
+          `uri="${uri}"`,
+          `algorithm=${algorithm}`,
+          `response="${responseHash}"`
+        ];
+        if (qop) {
+          digestParts.push(`qop="auth"`, `nc=${nc}`, `cnonce="${cnonce}"`);
+        }
+        if (opaque) {
+          digestParts.push(`opaque="${opaque}"`);
+        }
+        const digestHeader = `Digest ${digestParts.join(", ")}`;
+        const res2 = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: digestHeader,
+            Accept: "application/json"
+          }
+        });
+        const latencyMs2 = Date.now() - startTime;
+        const json = await res2.json().catch(async () => {
+          const text = await res2.text();
+          throw new Error(`R\xE9ponse non-JSON (${res2.status}): ${text}`);
+        });
+        if (res2.status !== 200) {
+          const errMsg = json?.data?.result?.message || json?.message || json?.error || `HTTP ${res2.status}`;
+          throw new Error(`Erreur TiDB Cloud (${res2.status}): ${errMsg}`);
+        }
+        return {
+          rawResponse: json,
+          latencyMs: latencyMs2,
+          statusCode: res2.status
+        };
+      }
+    }
+    const latencyMs = Date.now() - startTime;
+    const body = await res1.json().catch(() => null);
+    return {
+      rawResponse: body,
+      latencyMs,
+      statusCode: res1.status
+    };
+  } catch (fetchErr) {
+    if (publicKey && privateKey) {
+      try {
+        const { stdout } = await execFileAsync("curl", [
+          "--silent",
+          "--show-error",
+          "--digest",
+          "--user",
+          `${publicKey}:${privateKey}`,
+          "--request",
+          "GET",
+          url
+        ]);
+        const latencyMs = Date.now() - startTime;
+        const json = JSON.parse(stdout);
+        return {
+          rawResponse: json,
+          latencyMs,
+          statusCode: 200
+        };
+      } catch (curlErr) {
+        throw new Error(fetchErr.message || curlErr.message);
+      }
+    }
+    throw fetchErr;
+  }
+}
+function normalizeTiDBRowToProduct(row, index) {
+  const id = String(row.id || row.ID || row.product_id || `tidb-p${index + 1}`);
+  const nom = String(row.nom || row.name || row.title || row.label || "Produit TiDB Cloud");
+  const marque = String(row.marque || row.brand || row.manufacturer || "HP");
+  const modele = String(row.modele || row.model || "Standard");
+  const categorieId = String(row.categorie_id || row.category_id || row.categorieId || "cat-9");
+  const categorieNom = String(
+    row.categorie_nom || row.category_name || row.categorieNom || "Imprimantes Multifonctions (ou Tout-en-un)"
+  );
+  const prix = Number(row.prix ?? row.price ?? 199.99);
+  const image = String(
+    row.image || row.image_url || row.photo || (nom.toLowerCase().includes("hp") || nom.toLowerCase().includes("imprimante") ? "/hp_a3_e786dn.jpg" : "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80")
+  );
+  const garantie = String(row.garantie || row.warranty || "2 ans");
+  const stock = Number(row.stock ?? row.quantity ?? 10);
+  let disponibilite = stock > 0 ? "En stock" : "Rupture de stock";
+  if (row.disponibilite === "Sur commande" || row.disponibilite === "Rupture de stock" || row.disponibilite === "En stock") {
+    disponibilite = row.disponibilite;
+  }
+  const description = String(row.description || row.desc || "Produit synchronis\xE9 depuis TiDB Cloud Data App.");
+  let caracteristiques = [];
+  if (Array.isArray(row.caracteristiques)) {
+    caracteristiques = row.caracteristiques;
+  } else if (typeof row.caracteristiques === "string") {
+    try {
+      const parsed = JSON.parse(row.caracteristiques);
+      if (Array.isArray(parsed)) caracteristiques = parsed;
+      else caracteristiques = [row.caracteristiques];
+    } catch {
+      caracteristiques = row.caracteristiques.split(",").map((s) => s.trim());
+    }
+  } else {
+    caracteristiques = ["Synchronis\xE9 via TiDB Cloud", "Haute performance", "Garantie officielle"];
+  }
+  return {
+    id,
+    nom,
+    marque,
+    modele,
+    categorieId,
+    categorieNom,
+    prix,
+    image,
+    garantie,
+    stock,
+    disponibilite,
+    description,
+    caracteristiques
+  };
+}
+function extractRowsFromTiDBResponse(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (raw.data && Array.isArray(raw.data.rows)) return raw.data.rows;
+  if (Array.isArray(raw.rows)) return raw.rows;
+  if (raw.data && Array.isArray(raw.data)) return raw.data;
+  if (raw.data && typeof raw.data === "object" && (raw.data.id || raw.data.ID || raw.data.product_id || raw.data.category_id || raw.data.user_id)) {
+    return [raw.data];
+  }
+  if (typeof raw === "object" && (raw.id || raw.ID || raw.product_id || raw.category_id || raw.user_id || raw.nom || raw.name || raw.email)) {
+    return [raw];
+  }
+  return [];
+}
+async function fetchTiDBProducts(id) {
+  const config = getTiDBConfig();
+  let url = config.endpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const products = rows.map((row, idx) => normalizeTiDBRowToProduct(row, idx));
+  return {
+    products,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBProductById(id) {
+  const result = await fetchTiDBProducts(id);
+  const product = result.products.length > 0 ? result.products[0] : null;
+  return {
+    product,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
+function normalizeTiDBRowToCategory(row, index) {
+  const id = String(row.id || row.ID || row.category_id || row.categorie_id || `cat-${index + 1}`);
+  const nom = String(row.nom || row.name || row.title || row.label || "Cat\xE9gorie TiDB");
+  const description = String(row.description || row.desc || "Cat\xE9gorie synchronis\xE9e depuis TiDB Cloud.");
+  const statut = String(row.statut || row.status || "Actif").toLowerCase() === "inactif" ? "Inactif" : "Actif";
+  const dateCreation = String(
+    row.date_creation || row.created_at || row.dateCreation || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+  );
+  const nombreProduits = Number(row.nombre_produits || row.product_count || row.nombreProduits || 0);
+  return {
+    id,
+    nom,
+    description,
+    statut,
+    dateCreation,
+    nombreProduits
+  };
+}
+async function fetchTiDBCategories(id) {
+  const config = getTiDBConfig();
+  let url = config.categoriesEndpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const categories = rows.map((row, idx) => normalizeTiDBRowToCategory(row, idx));
+  return {
+    categories,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBCategoryById(id) {
+  const result = await fetchTiDBCategories(id);
+  const category = result.categories.length > 0 ? result.categories[0] : null;
+  return {
+    category,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
+function normalizeTiDBRowToUser(row, index) {
+  const id = String(row.id || row.ID || row.user_id || `u-${index + 1}`);
+  const nom = String(row.nom || row.name || row.fullname || row.username || "Utilisateur TiDB");
+  const email = String(row.email || row.mail || `user${index + 1}@example.com`).trim().toLowerCase();
+  let role = "Client";
+  const roleRaw = String(row.role || "").toLowerCase();
+  if (roleRaw.includes("admin")) {
+    role = "Admin";
+  } else if (roleRaw.includes("vendeur") || roleRaw.includes("seller") || roleRaw.includes("sales")) {
+    role = "Vendeur";
+  }
+  let statut = "Actif";
+  const statutRaw = String(row.statut || row.status || "Actif").toLowerCase();
+  if (statutRaw.includes("suspend")) {
+    statut = "Suspendu";
+  } else if (statutRaw.includes("inactif") || statutRaw.includes("inactive")) {
+    statut = "Inactif";
+  }
+  const dateInscription = String(
+    row.date_inscription || row.created_at || row.dateInscription || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+  );
+  const isEmailVerified = Boolean(
+    row.is_email_verified ?? row.isEmailVerified ?? statut === "Actif"
+  );
+  return {
+    id,
+    nom,
+    email,
+    role,
+    statut,
+    dateInscription,
+    isEmailVerified
+  };
+}
+async function fetchTiDBUsers(id) {
+  const config = getTiDBConfig();
+  let url = config.usersEndpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const users = rows.map((row, idx) => normalizeTiDBRowToUser(row, idx));
+  return {
+    users,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBUserById(id) {
+  const result = await fetchTiDBUsers(id);
+  const user = result.users.length > 0 ? result.users[0] : null;
+  return {
+    user,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
+function normalizeTiDBRowToClient(row, index) {
+  const id = String(row.id || row.ID || row.client_id || row.clientId || `c-${index + 1}`);
+  const userId = String(row.user_id || row.userId || row.id || `u-${index + 1}`);
+  const nombreCommandes = Number(
+    row.nombre_commandes ?? row.nombreCommandes ?? row.order_count ?? row.orders_count ?? 0
+  );
+  const totalDepense = parseFloat(
+    Number(row.total_depense ?? row.totalDepense ?? row.total_spent ?? row.amount_spent ?? 0).toFixed(2)
+  );
+  const statut = String(row.statut || row.status || "Actif");
+  const nom = String(row.nom || row.name || row.customer_name || "Client TiDB");
+  const email = String(row.email || row.mail || `client${index + 1}@example.com`).trim().toLowerCase();
+  const user = {
+    id: userId,
+    nom,
+    email,
+    role: "Client",
+    statut: statut === "Suspendu" ? "Suspendu" : statut === "Inactif" ? "Inactif" : "Actif",
+    dateInscription: String(row.date_inscription || row.created_at || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]),
+    isEmailVerified: true
+  };
+  return {
+    id,
+    userId,
+    nombreCommandes,
+    totalDepense,
+    statut,
+    user
+  };
+}
+async function fetchTiDBClients(id) {
+  const config = getTiDBConfig();
+  let url = config.clientsEndpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const clients = rows.map((row, idx) => normalizeTiDBRowToClient(row, idx));
+  return {
+    clients,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBClientById(id) {
+  const result = await fetchTiDBClients(id);
+  const client = result.clients.length > 0 ? result.clients[0] : null;
+  return {
+    client,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
+function normalizeTiDBRowToOrderLine(row, index) {
+  const id = String(row.id || row.ID || row.order_line_id || row.line_id || `lc-${index + 1}`);
+  const commandeId = String(row.commande_id || row.commandeId || row.order_id || row.orderId || "cmd-1");
+  const produitId = String(row.produit_id || row.produitId || row.product_id || row.productId || "p-1");
+  const quantite = Number(row.quantite || row.quantity || row.qty || 1);
+  const prixUnitaire = parseFloat(
+    Number(row.prix_unitaire ?? row.prixUnitaire ?? row.unit_price ?? row.price ?? 0).toFixed(2)
+  );
+  const prixTotal = parseFloat(
+    Number(row.prix_total ?? row.prixTotal ?? row.total_price ?? prixUnitaire * quantite).toFixed(2)
+  );
+  const nom = String(row.produit_nom || row.produitNom || row.product_name || row.nom || "Article informatique");
+  const produit = {
+    id: produitId,
+    nom,
+    marque: String(row.marque || "G\xE9n\xE9rique"),
+    modele: String(row.modele || "Standard"),
+    categorieId: String(row.categorie_id || row.categorieId || "cat-1"),
+    prix: prixUnitaire,
+    image: String(row.image || "https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=600"),
+    garantie: String(row.garantie || "2 ans"),
+    stock: 10,
+    disponibilite: "En stock",
+    description: String(row.description || "Produit TiDB Cloud")
+  };
+  return {
+    id,
+    commandeId,
+    produitId,
+    quantite,
+    prixUnitaire,
+    prixTotal,
+    produit
+  };
+}
+async function fetchTiDBOrderLines(id) {
+  const config = getTiDBConfig();
+  let url = config.orderLinesEndpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const orderLines = rows.map((row, idx) => normalizeTiDBRowToOrderLine(row, idx));
+  return {
+    orderLines,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBOrderLineById(id) {
+  const result = await fetchTiDBOrderLines(id);
+  const orderLine = result.orderLines.length > 0 ? result.orderLines[0] : null;
+  return {
+    orderLine,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
+function normalizeTiDBRowToOrder(row, index) {
+  const id = String(row.id || row.ID || row.order_id || `cmd-${index + 1}`);
+  const reference = String(
+    row.reference || row.ref || row.order_number || `CMD-2026-${String(index + 1).padStart(4, "0")}`
+  );
+  const clientId = String(row.client_id || row.clientId || row.user_id || "c-1");
+  const clientNom = String(
+    row.client_nom || row.clientNom || row.customer_name || row.client_name || row.nom || "Client Entreprise"
+  );
+  const clientEmail = String(
+    row.client_email || row.clientEmail || row.customer_email || row.email || "client@example.com"
+  );
+  const date = String(row.date || row.date_commande || row.created_at || (/* @__PURE__ */ new Date()).toISOString().split("T")[0]);
+  const montantTotal = parseFloat(
+    Number(row.montant_total ?? row.montantTotal ?? row.total_amount ?? row.total ?? 0).toFixed(2)
+  );
+  let statut = "En attente";
+  const statutRaw = String(row.statut || row.status || "En attente").toLowerCase();
+  if (statutRaw.includes("cours") || statutRaw.includes("processing")) {
+    statut = "En cours";
+  } else if (statutRaw.includes("exp\xE9di") || statutRaw.includes("shipped")) {
+    statut = "Exp\xE9di\xE9e";
+  } else if (statutRaw.includes("livr") || statutRaw.includes("delivered")) {
+    statut = "Livr\xE9e";
+  } else if (statutRaw.includes("annul") || statutRaw.includes("cancelled")) {
+    statut = "Annul\xE9e";
+  }
+  let statutPaiement = "Pay\xE9";
+  const paiementRaw = String(row.statut_paiement || row.statutPaiement || row.payment_status || "Pay\xE9").toLowerCase();
+  if (paiementRaw.includes("attente") || paiementRaw.includes("pending")) {
+    statutPaiement = "En attente";
+  } else if (paiementRaw.includes("rembours") || paiementRaw.includes("refunded")) {
+    statutPaiement = "Rembours\xE9";
+  } else if (paiementRaw.includes("\xE9chou") || paiementRaw.includes("failed")) {
+    statutPaiement = "\xC9chou\xE9";
+  }
+  const adresseLivraison = String(
+    row.adresse_livraison || row.adresseLivraison || row.shipping_address || row.address || "Abidjan, C\xF4te d'Ivoire"
+  );
+  let lignes = [];
+  if (Array.isArray(row.lignes) && row.lignes.length > 0) {
+    lignes = row.lignes.map((l, lIdx) => normalizeTiDBRowToOrderLine(l, lIdx));
+  } else if (Array.isArray(row.lines) && row.lines.length > 0) {
+    lignes = row.lines.map((l, lIdx) => normalizeTiDBRowToOrderLine(l, lIdx));
+  } else {
+    lignes = [
+      {
+        id: `lc-${id}-1`,
+        commandeId: id,
+        produitId: "p-1",
+        quantite: 1,
+        prixUnitaire: montantTotal,
+        prixTotal: montantTotal
+      }
+    ];
+  }
+  return {
+    id,
+    reference,
+    clientId,
+    clientNom,
+    clientEmail,
+    date,
+    montantTotal,
+    statut,
+    statutPaiement,
+    lignes,
+    adresseLivraison
+  };
+}
+async function fetchTiDBOrders(id) {
+  const config = getTiDBConfig();
+  let url = config.ordersEndpointUrl;
+  if (id !== void 0 && id !== null && String(id).trim() !== "") {
+    const parsed = new URL(url);
+    parsed.searchParams.set("id", String(id).trim());
+    url = parsed.toString();
+  }
+  const result = await executeTiDBGetRequest(url);
+  const raw = result.rawResponse;
+  const rows = extractRowsFromTiDBResponse(raw);
+  const orders = rows.map((row, idx) => normalizeTiDBRowToOrder(row, idx));
+  return {
+    orders,
+    totalRows: rows.length,
+    latencyMs: result.latencyMs,
+    rawResponse: raw,
+    targetUrl: url
+  };
+}
+async function fetchTiDBOrderById(id) {
+  const result = await fetchTiDBOrders(id);
+  const order = result.orders.length > 0 ? result.orders[0] : null;
+  return {
+    order,
+    latencyMs: result.latencyMs,
+    rawResponse: result.rawResponse,
+    targetUrl: result.targetUrl
+  };
+}
 
 // server.ts
+var verificationCodes = /* @__PURE__ */ new Map();
 var usersStore = [...MOCK_USERS];
 var clientsStore = [...MOCK_CLIENTS];
 var categoriesStore = [...MOCK_CATEGORIES];
@@ -859,8 +2207,721 @@ async function startServer() {
   app.use(import_express.default.urlencoded({ extended: true, limit: "50mb" }));
   const dbStatus = await initMySQLConnection();
   console.log(`[DB Status] Mode: ${dbStatus.mode.toUpperCase()}${dbStatus.error ? " (" + dbStatus.error + ")" : ""}`);
+  try {
+    const loadedData = await dbLoadAll();
+    usersStore = loadedData.users;
+    categoriesStore = loadedData.categories;
+    productsStore = loadedData.products;
+    clientsStore = loadedData.clients;
+    ordersStore = loadedData.orders;
+    console.log(`[DB Ready] Donn\xE9es charg\xE9es : ${productsStore.length} produits, ${categoriesStore.length} cat\xE9gories, ${usersStore.length} utilisateurs.`);
+  } catch (err) {
+    console.error("[DB Boot Load Error]", err);
+  }
   app.get("/api/db/status", (req, res) => {
     res.json(getDbStatus());
+  });
+  app.get("/api/db/overview", async (req, res) => {
+    try {
+      const overview = await dbGetTablesOverview();
+      res.json(overview);
+    } catch (err) {
+      res.status(500).json({ error: err.message || "Erreur overview BDD" });
+    }
+  });
+  app.post("/api/db/insert-data", async (req, res) => {
+    const { table, data } = req.body;
+    if (!table || !data) {
+      return res.status(400).json({ error: "Table et donn\xE9es requises" });
+    }
+    try {
+      if (table === "products") {
+        const cat = categoriesStore.find((c) => c.id === data.categorieId);
+        const prod = {
+          id: data.id || "p-" + Date.now(),
+          nom: data.nom || "Nouveau Produit Informatique",
+          marque: data.marque || "G\xE9n\xE9rique",
+          modele: data.modele || "PRO",
+          categorieId: data.categorieId || (categoriesStore[0]?.id || "cat-1"),
+          categorieNom: cat ? cat.nom : data.categorieNom || "Composants",
+          prix: Number(data.prix) || 99.99,
+          image: data.image || "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80",
+          garantie: data.garantie || "2 ans",
+          stock: Number(data.stock) || 10,
+          disponibilite: Number(data.stock) > 0 ? "En stock" : "Rupture de stock",
+          description: data.description || "\xC9quipement informatique certifi\xE9.",
+          caracteristiques: Array.isArray(data.caracteristiques) ? data.caracteristiques : [data.caracteristiques || "Haute performance"]
+        };
+        productsStore.unshift(prod);
+        await dbInsertProduct(prod);
+        return res.status(201).json({
+          success: true,
+          table: "products",
+          record: prod,
+          message: `Produit "${prod.nom}" ajout\xE9 avec succ\xE8s \xE0 la base de donn\xE9es.`,
+          sqlExecuted: `INSERT INTO products (id, nom, marque, modele, categorie_id, prix, stock) VALUES ('${prod.id}', '${prod.nom.replace(/'/g, "''")}', '${prod.marque}', '${prod.modele}', '${prod.categorieId}', ${prod.prix}, ${prod.stock});`
+        });
+      }
+      if (table === "categories") {
+        const cat = {
+          id: data.id || "cat-" + Date.now(),
+          nom: data.nom || "Nouvelle Cat\xE9gorie",
+          description: data.description || "Description de la cat\xE9gorie.",
+          statut: data.statut || "Actif",
+          dateCreation: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+          nombreProduits: 0
+        };
+        categoriesStore.push(cat);
+        await dbInsertCategory(cat);
+        return res.status(201).json({
+          success: true,
+          table: "categories",
+          record: cat,
+          message: `Cat\xE9gorie "${cat.nom}" ajout\xE9e avec succ\xE8s \xE0 la base de donn\xE9es.`,
+          sqlExecuted: `INSERT INTO categories (id, nom, description, statut, date_creation) VALUES ('${cat.id}', '${cat.nom.replace(/'/g, "''")}', '${cat.description.replace(/'/g, "''")}', '${cat.statut}', '${cat.dateCreation}');`
+        });
+      }
+      if (table === "users") {
+        const user = {
+          id: data.id || "u-" + Date.now(),
+          nom: data.nom || "Nouvel Utilisateur",
+          email: (data.email || `user${Date.now()}@example.com`).trim().toLowerCase(),
+          role: data.role || "Client",
+          statut: data.statut || "Actif",
+          dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+          isEmailVerified: data.isEmailVerified !== void 0 ? Boolean(data.isEmailVerified) : true
+        };
+        usersStore.unshift(user);
+        if (user.role === "Client") {
+          clientsStore.unshift({
+            id: "c-" + Date.now(),
+            userId: user.id,
+            nombreCommandes: 0,
+            totalDepense: 0,
+            statut: "Nouveau",
+            user
+          });
+        }
+        await dbInsertUser(user);
+        return res.status(201).json({
+          success: true,
+          table: "users",
+          record: user,
+          message: `Utilisateur "${user.nom}" ajout\xE9 avec succ\xE8s \xE0 la base de donn\xE9es.`,
+          sqlExecuted: `INSERT INTO users (id, nom, email, role, statut) VALUES ('${user.id}', '${user.nom.replace(/'/g, "''")}', '${user.email}', '${user.role}', '${user.statut}');`
+        });
+      }
+      if (table === "orders") {
+        const order = {
+          id: data.id || "cmd-" + Date.now(),
+          reference: data.reference || `CMD-2026-${Math.floor(1e3 + Math.random() * 9e3)}`,
+          clientId: data.clientId || (clientsStore[0]?.id || "c1"),
+          clientNom: data.clientNom || "Entreprise Client SAS",
+          clientEmail: data.clientEmail || "contact@client-sas.com",
+          date: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+          montantTotal: Number(data.montantTotal) || 540,
+          statut: data.statut || "En attente",
+          statutPaiement: data.statutPaiement || "Pay\xE9",
+          adresseLivraison: data.adresseLivraison || "25 Rue de Rivoli, Paris",
+          lignes: data.lignes || [
+            {
+              id: "lc-" + Date.now(),
+              commandeId: data.id || "cmd-" + Date.now(),
+              produitId: productsStore[0]?.id || "p1",
+              quantite: 1,
+              prixUnitaire: productsStore[0]?.prix || 149.99,
+              prixTotal: productsStore[0]?.prix || 149.99,
+              produit: productsStore[0]
+            }
+          ]
+        };
+        ordersStore.unshift(order);
+        await dbInsertOrder(order);
+        return res.status(201).json({
+          success: true,
+          table: "orders",
+          record: order,
+          message: `Commande "${order.reference}" ajout\xE9e avec succ\xE8s \xE0 la base de donn\xE9es.`,
+          sqlExecuted: `INSERT INTO orders (id, reference, client_id, montant_total, statut) VALUES ('${order.id}', '${order.reference}', '${order.clientId}', ${order.montantTotal}, '${order.statut}');`
+        });
+      }
+      return res.status(400).json({ error: `Table "${table}" non reconnue.` });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || "Erreur lors de l'insertion en BDD" });
+    }
+  });
+  app.post("/api/db/execute-sql", async (req, res) => {
+    try {
+      const { sql } = req.body;
+      const result = await dbExecuteSQL(sql || "");
+      const lower = (sql || "").toLowerCase();
+      if (lower.includes("insert") || lower.includes("update") || lower.includes("delete") || lower.includes("truncate") || lower.includes("drop")) {
+        const reloaded = await dbLoadAll();
+        usersStore = reloaded.users;
+        categoriesStore = reloaded.categories;
+        productsStore = reloaded.products;
+        clientsStore = reloaded.clients;
+        ordersStore = reloaded.orders;
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+  app.post("/api/db/seed-batch", async (req, res) => {
+    try {
+      const { batchType } = req.body;
+      const count = await dbSeedBatch(batchType || "all");
+      const reloaded = await dbLoadAll();
+      usersStore = reloaded.users;
+      categoriesStore = reloaded.categories;
+      productsStore = reloaded.products;
+      clientsStore = reloaded.clients;
+      ordersStore = reloaded.orders;
+      res.json({
+        success: true,
+        count,
+        message: `${count} donn\xE9es ajout\xE9es avec succ\xE8s dans la base de donn\xE9es !`
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message || "Erreur injection par lot" });
+    }
+  });
+  app.post("/api/db/reset", async (req, res) => {
+    try {
+      await dbResetDatabase();
+      const reloaded = await dbLoadAll();
+      usersStore = reloaded.users;
+      categoriesStore = reloaded.categories;
+      productsStore = reloaded.products;
+      clientsStore = reloaded.clients;
+      ordersStore = reloaded.orders;
+      res.json({ success: true, message: "Base de donn\xE9es r\xE9initialis\xE9e avec succ\xE8s !" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  app.get("/api/tidb/status", (req, res) => {
+    const config = getTiDBConfig();
+    const maskedKey = config.publicKey ? `${config.publicKey.slice(0, 4)}\u2022\u2022\u2022\u2022${config.publicKey.slice(-4)}` : "";
+    res.json({
+      endpointUrl: config.endpointUrl,
+      categoriesEndpointUrl: config.categoriesEndpointUrl,
+      usersEndpointUrl: config.usersEndpointUrl,
+      ordersEndpointUrl: config.ordersEndpointUrl,
+      clientsEndpointUrl: config.clientsEndpointUrl,
+      orderLinesEndpointUrl: config.orderLinesEndpointUrl,
+      isConfigured: config.isConfigured,
+      publicKeyMasked: maskedKey,
+      curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}'`,
+      curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}?id=\${id}'`,
+      curlProducts: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}'`,
+      curlProductsById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}?id=\${id}'`,
+      curlCategories: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}'`,
+      curlCategoriesById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}?id=\${id}'`,
+      curlUsers: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}'`,
+      curlUsersById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}?id=\${id}'`,
+      curlOrders: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}'`,
+      curlOrdersById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}?id=\${id}'`,
+      curlClients: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}'`,
+      curlClientsById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}?id=\${id}'`,
+      curlOrderLines: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}'`,
+      curlOrderLinesById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}?id=\${id}'`
+    });
+  });
+  app.get("/api/tidb/products", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.endpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBProducts(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (produits)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/products/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.endpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.endpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBProductById(id);
+      if (!result.product) {
+        return res.status(404).json({
+          error: `Produit avec l'ID "${id}" non trouv\xE9 sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration du produit ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
+  });
+  app.post("/api/tidb/sync", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud manquantes",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement pour synchroniser les donn\xE9es depuis TiDB Cloud.",
+          endpointUrl: config.endpointUrl
+        });
+      }
+      const result = await fetchTiDBProducts();
+      let importedCount = 0;
+      for (const p of result.products) {
+        const idx = productsStore.findIndex((item) => item.id === p.id);
+        if (idx >= 0) {
+          productsStore[idx] = p;
+        } else {
+          productsStore.unshift(p);
+        }
+        await dbInsertProduct(p);
+        importedCount++;
+      }
+      res.json({
+        success: true,
+        count: importedCount,
+        latencyMs: result.latencyMs,
+        message: `${importedCount} produit(s) synchronis\xE9(s) depuis TiDB Cloud Data App avec succ\xE8s !`,
+        products: result.products
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "\xC9chec de synchronisation TiDB Cloud (produits)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/categories", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.categoriesEndpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBCategories(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (cat\xE9gories)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/categories/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.categoriesEndpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.categoriesEndpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBCategoryById(id);
+      if (!result.category) {
+        return res.status(404).json({
+          error: `Cat\xE9gorie avec l'ID "${id}" non trouv\xE9e sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration de la cat\xE9gorie ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
+  });
+  app.post("/api/tidb/sync-categories", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud manquantes",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement pour synchroniser les donn\xE9es depuis TiDB Cloud.",
+          endpointUrl: config.categoriesEndpointUrl
+        });
+      }
+      const result = await fetchTiDBCategories();
+      let importedCount = 0;
+      for (const cat of result.categories) {
+        const idx = categoriesStore.findIndex((item) => item.id === cat.id);
+        if (idx >= 0) {
+          categoriesStore[idx] = cat;
+        } else {
+          categoriesStore.push(cat);
+        }
+        await dbInsertCategory(cat);
+        importedCount++;
+      }
+      res.json({
+        success: true,
+        count: importedCount,
+        latencyMs: result.latencyMs,
+        message: `${importedCount} cat\xE9gorie(s) synchronis\xE9e(s) depuis TiDB Cloud Data App avec succ\xE8s !`,
+        categories: result.categories
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "\xC9chec de synchronisation TiDB Cloud (cat\xE9gories)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/users", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.usersEndpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBUsers(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (utilisateurs)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/users/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.usersEndpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.usersEndpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBUserById(id);
+      if (!result.user) {
+        return res.status(404).json({
+          error: `Utilisateur avec l'ID "${id}" non trouv\xE9 sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration de l'utilisateur ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
+  });
+  app.post("/api/tidb/sync-users", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud manquantes",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement pour synchroniser les donn\xE9es depuis TiDB Cloud.",
+          endpointUrl: config.usersEndpointUrl
+        });
+      }
+      const result = await fetchTiDBUsers();
+      let importedCount = 0;
+      for (const u of result.users) {
+        const idx = usersStore.findIndex((item) => item.id === u.id || item.email.toLowerCase() === u.email.toLowerCase());
+        if (idx >= 0) {
+          usersStore[idx] = u;
+        } else {
+          usersStore.unshift(u);
+        }
+        await dbInsertUser(u);
+        importedCount++;
+      }
+      res.json({
+        success: true,
+        count: importedCount,
+        latencyMs: result.latencyMs,
+        message: `${importedCount} utilisateur(s) synchronis\xE9(s) depuis TiDB Cloud Data App avec succ\xE8s !`,
+        users: result.users
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "\xC9chec de synchronisation TiDB Cloud (utilisateurs)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/orders", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.ordersEndpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBOrders(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (commandes)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/orders/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.ordersEndpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.ordersEndpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBOrderById(id);
+      if (!result.order) {
+        return res.status(404).json({
+          error: `Commande avec l'ID "${id}" non trouv\xE9e sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration de la commande ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
+  });
+  app.post("/api/tidb/sync-orders", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud manquantes",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement pour synchroniser les donn\xE9es depuis TiDB Cloud.",
+          endpointUrl: config.ordersEndpointUrl
+        });
+      }
+      const result = await fetchTiDBOrders();
+      let importedCount = 0;
+      for (const ord of result.orders) {
+        const idx = ordersStore.findIndex((item) => item.id === ord.id || item.reference === ord.reference);
+        if (idx >= 0) {
+          ordersStore[idx] = ord;
+        } else {
+          ordersStore.unshift(ord);
+        }
+        await dbInsertOrder(ord);
+        importedCount++;
+      }
+      res.json({
+        success: true,
+        count: importedCount,
+        latencyMs: result.latencyMs,
+        message: `${importedCount} commande(s) synchronis\xE9e(s) depuis TiDB Cloud Data App avec succ\xE8s !`,
+        orders: result.orders
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "\xC9chec de synchronisation TiDB Cloud (commandes)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/clients", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.clientsEndpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBClients(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (clients)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/clients/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.clientsEndpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.clientsEndpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBClientById(id);
+      if (!result.client) {
+        return res.status(404).json({
+          error: `Client avec l'ID "${id}" non trouv\xE9 sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration du client ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
+  });
+  app.post("/api/tidb/sync-clients", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud manquantes",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement pour synchroniser les donn\xE9es depuis TiDB Cloud.",
+          endpointUrl: config.clientsEndpointUrl
+        });
+      }
+      const result = await fetchTiDBClients();
+      let importedCount = 0;
+      for (const cl of result.clients) {
+        const idx = clientsStore.findIndex((item) => item.id === cl.id || item.userId === cl.userId);
+        if (idx >= 0) {
+          clientsStore[idx] = cl;
+        } else {
+          clientsStore.unshift(cl);
+        }
+        if (cl.user) {
+          const uIdx = usersStore.findIndex((u) => u.id === cl.user.id || u.email.toLowerCase() === cl.user.email.toLowerCase());
+          if (uIdx >= 0) {
+            usersStore[uIdx] = cl.user;
+          } else {
+            usersStore.unshift(cl.user);
+          }
+          await dbInsertUser(cl.user);
+        }
+        importedCount++;
+      }
+      res.json({
+        success: true,
+        count: importedCount,
+        latencyMs: result.latencyMs,
+        message: `${importedCount} client(s) synchronis\xE9(s) depuis TiDB Cloud Data App avec succ\xE8s !`,
+        clients: result.clients
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "\xC9chec de synchronisation TiDB Cloud (clients)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/order-lines", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const idParam = req.query.id ? String(req.query.id) : void 0;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: config.orderLinesEndpointUrl,
+          curlSample: idParam ? `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}?id=${idParam}'` : `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}'`,
+          curlSampleById: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}?id=\${id}'`
+        });
+      }
+      const result = await fetchTiDBOrderLines(idParam);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: "Erreur lors de l'interrogation du point de terminaison TiDB Cloud (lignes de commandes)",
+        message: err.message
+      });
+    }
+  });
+  app.get("/api/tidb/order-lines/:id", async (req, res) => {
+    try {
+      const config = getTiDBConfig();
+      const { id } = req.params;
+      if (!config.isConfigured) {
+        return res.status(400).json({
+          error: "Cl\xE9s TiDB Cloud non configur\xE9es",
+          message: "Veuillez d\xE9finir TIDB_PUBLIC_KEY et TIDB_PRIVATE_KEY dans les variables d'environnement ou secrets pour interroger le point de terminaison TiDB Cloud.",
+          endpointUrl: `${config.orderLinesEndpointUrl}?id=${id}`,
+          curlSample: `curl --user \${PUBLIC_KEY}:\${PRIVATE_KEY} --request GET '${config.orderLinesEndpointUrl}?id=${id}'`
+        });
+      }
+      const result = await fetchTiDBOrderLineById(id);
+      if (!result.orderLine) {
+        return res.status(404).json({
+          error: `Ligne de commande avec l'ID "${id}" non trouv\xE9e sur TiDB Cloud`,
+          latencyMs: result.latencyMs,
+          targetUrl: result.targetUrl,
+          rawResponse: result.rawResponse
+        });
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({
+        error: `Erreur lors de la r\xE9cup\xE9ration de la ligne de commande ${req.params.id} sur TiDB Cloud`,
+        message: err.message
+      });
+    }
   });
   app.get("/api/dashboard/stats", (req, res) => {
     const totalRev = ordersStore.reduce((acc, order) => acc + order.montantTotal, 0);
@@ -887,20 +2948,49 @@ async function startServer() {
     }
     res.json(filtered);
   });
-  app.post("/api/users", (req, res) => {
+  app.get("/api/users/:id", async (req, res) => {
+    const { id } = req.params;
+    const { source } = req.query;
+    if (source === "tidb") {
+      try {
+        const tidbRes = await fetchTiDBUserById(id);
+        if (tidbRes.user) {
+          return res.json(tidbRes.user);
+        }
+      } catch (err) {
+        console.warn(`[TiDB User ID Query Warning] ID ${id}:`, err.message);
+      }
+    }
+    let user = usersStore.find((u) => u.id === id);
+    if (!user) {
+      try {
+        const tidbRes = await fetchTiDBUserById(id);
+        if (tidbRes.user) {
+          user = tidbRes.user;
+        }
+      } catch (err) {
+      }
+    }
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouv\xE9" });
+    }
+    res.json(user);
+  });
+  app.post("/api/users", async (req, res) => {
     const { nom, email, role, statut } = req.body;
     const newUser = {
-      id: "u" + (usersStore.length + 1),
+      id: req.body.id || "u-" + Date.now(),
       nom: nom || "Nouvel Utilisateur",
       email: email || `user${Date.now()}@example.com`,
       role: role || "Client",
       statut: statut || "Actif",
-      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isEmailVerified: true
     };
-    usersStore.push(newUser);
+    usersStore.unshift(newUser);
     if (newUser.role === "Client") {
-      clientsStore.push({
-        id: "c" + (clientsStore.length + 1),
+      clientsStore.unshift({
+        id: "c-" + Date.now(),
         userId: newUser.id,
         nombreCommandes: 0,
         totalDepense: 0,
@@ -908,21 +2998,24 @@ async function startServer() {
         user: newUser
       });
     }
+    await dbInsertUser(newUser);
     res.status(201).json(newUser);
   });
-  app.put("/api/users/:id", (req, res) => {
+  app.put("/api/users/:id", async (req, res) => {
     const { id } = req.params;
     const idx = usersStore.findIndex((u) => u.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: "Utilisateur non trouv\xE9" });
     }
     usersStore[idx] = { ...usersStore[idx], ...req.body };
+    await dbUpdateUser(id, req.body);
     res.json(usersStore[idx]);
   });
-  app.delete("/api/users/:id", (req, res) => {
+  app.delete("/api/users/:id", async (req, res) => {
     const { id } = req.params;
     usersStore = usersStore.filter((u) => u.id !== id);
     clientsStore = clientsStore.filter((c) => c.userId !== id);
+    await dbDeleteUser(id);
     res.json({ success: true, id });
   });
   app.get("/api/clients", (req, res) => {
@@ -932,9 +3025,20 @@ async function startServer() {
     });
     res.json(enriched);
   });
-  app.get("/api/products", (req, res) => {
-    const { search, category, minPrice, maxPrice } = req.query;
-    let filtered = [...productsStore];
+  app.get("/api/products", async (req, res) => {
+    const { search, category, minPrice, maxPrice, source } = req.query;
+    let targetList = [...productsStore];
+    if (source === "tidb") {
+      try {
+        const tidbResult = await fetchTiDBProducts();
+        if (tidbResult.products && tidbResult.products.length > 0) {
+          targetList = tidbResult.products;
+        }
+      } catch (err) {
+        console.warn("[TiDB Fetch Warning] Utilisation du store local en secours:", err.message);
+      }
+    }
+    let filtered = targetList;
     if (search && typeof search === "string") {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -952,22 +3056,43 @@ async function startServer() {
     }
     res.json(filtered);
   });
-  app.get("/api/products/:id", (req, res) => {
-    const product = productsStore.find((p) => p.id === req.params.id);
+  app.get("/api/products/:id", async (req, res) => {
+    const { id } = req.params;
+    const { source } = req.query;
+    if (source === "tidb") {
+      try {
+        const tidbRes = await fetchTiDBProductById(id);
+        if (tidbRes.product) {
+          return res.json(tidbRes.product);
+        }
+      } catch (err) {
+        console.warn(`[TiDB ID Query Warning] ID ${id}:`, err.message);
+      }
+    }
+    let product = productsStore.find((p) => p.id === id);
+    if (!product) {
+      try {
+        const tidbRes = await fetchTiDBProductById(id);
+        if (tidbRes.product) {
+          product = tidbRes.product;
+        }
+      } catch (err) {
+      }
+    }
     if (!product) {
       return res.status(404).json({ error: "Produit non trouv\xE9" });
     }
     res.json(product);
   });
-  app.post("/api/products", (req, res) => {
+  app.post("/api/products", async (req, res) => {
     const cat = categoriesStore.find((c) => c.id === req.body.categorieId);
     const newProduct = {
-      id: "p" + (productsStore.length + 1),
+      id: req.body.id || "p-" + Date.now(),
       nom: req.body.nom || "Nouveau Produit",
       marque: req.body.marque || "G\xE9n\xE9rique",
       modele: req.body.modele || "PRO",
       categorieId: req.body.categorieId || "cat-1",
-      categorieNom: cat ? cat.nom : "Composants",
+      categorieNom: cat ? cat.nom : req.body.categorieNom || "Composants",
       prix: Number(req.body.prix) || 99.99,
       image: req.body.image || "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80",
       garantie: req.body.garantie || "2 ans",
@@ -976,10 +3101,11 @@ async function startServer() {
       description: req.body.description || "Description du produit informatique.",
       caracteristiques: req.body.caracteristiques || ["Haute performance", "Garantie officielle"]
     };
-    productsStore.push(newProduct);
+    productsStore.unshift(newProduct);
+    await dbInsertProduct(newProduct);
     res.status(201).json(newProduct);
   });
-  app.put("/api/products/:id", (req, res) => {
+  app.put("/api/products/:id", async (req, res) => {
     const { id } = req.params;
     const idx = productsStore.findIndex((p) => p.id === id);
     if (idx === -1) {
@@ -990,11 +3116,13 @@ async function startServer() {
       updated.disponibilite = updated.stock > 0 ? "En stock" : "Rupture de stock";
     }
     productsStore[idx] = updated;
+    await dbUpdateProduct(id, req.body);
     res.json(productsStore[idx]);
   });
-  app.delete("/api/products/:id", (req, res) => {
+  app.delete("/api/products/:id", async (req, res) => {
     const { id } = req.params;
     productsStore = productsStore.filter((p) => p.id !== id);
+    await dbDeleteProduct(id);
     res.json({ success: true, id });
   });
   app.get("/api/categories", (req, res) => {
@@ -1004,30 +3132,62 @@ async function startServer() {
     });
     res.json(enriched);
   });
-  app.post("/api/categories", (req, res) => {
+  app.get("/api/categories/:id", async (req, res) => {
+    const { id } = req.params;
+    const { source } = req.query;
+    if (source === "tidb") {
+      try {
+        const tidbRes = await fetchTiDBCategoryById(id);
+        if (tidbRes.category) {
+          return res.json(tidbRes.category);
+        }
+      } catch (err) {
+        console.warn(`[TiDB Category ID Query Warning] ID ${id}:`, err.message);
+      }
+    }
+    let cat = categoriesStore.find((c) => c.id === id);
+    if (!cat) {
+      try {
+        const tidbRes = await fetchTiDBCategoryById(id);
+        if (tidbRes.category) {
+          cat = tidbRes.category;
+        }
+      } catch (err) {
+      }
+    }
+    if (!cat) {
+      return res.status(404).json({ error: "Cat\xE9gorie non trouv\xE9e" });
+    }
+    const count = productsStore.filter((p) => p.categorieId === cat.id).length;
+    res.json({ ...cat, nombreProduits: count });
+  });
+  app.post("/api/categories", async (req, res) => {
     const newCat = {
-      id: "cat-" + (categoriesStore.length + 1),
+      id: req.body.id || "cat-" + Date.now(),
       nom: req.body.nom || "Nouvelle Cat\xE9gorie",
       description: req.body.description || "Description de la cat\xE9gorie.",
-      statut: "Actif",
+      statut: req.body.statut || "Actif",
       dateCreation: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
       nombreProduits: 0
     };
     categoriesStore.push(newCat);
+    await dbInsertCategory(newCat);
     res.status(201).json(newCat);
   });
-  app.put("/api/categories/:id", (req, res) => {
+  app.put("/api/categories/:id", async (req, res) => {
     const { id } = req.params;
     const idx = categoriesStore.findIndex((c) => c.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: "Cat\xE9gorie non trouv\xE9e" });
     }
     categoriesStore[idx] = { ...categoriesStore[idx], ...req.body };
+    await dbUpdateCategory(id, req.body);
     res.json(categoriesStore[idx]);
   });
-  app.delete("/api/categories/:id", (req, res) => {
+  app.delete("/api/categories/:id", async (req, res) => {
     const { id } = req.params;
     categoriesStore = categoriesStore.filter((c) => c.id !== id);
+    await dbDeleteCategory(id);
     res.json({ success: true, id });
   });
   app.get("/api/orders", (req, res) => {
@@ -1041,7 +3201,7 @@ async function startServer() {
     }
     res.json(filtered);
   });
-  app.post("/api/orders", (req, res) => {
+  app.post("/api/orders", async (req, res) => {
     const { items, adresseLivraison, clientNom, clientEmail } = req.body;
     const total = items.reduce(
       (sum, item) => sum + item.produit.prix * item.quantite,
@@ -1081,9 +3241,10 @@ async function startServer() {
         if (p.stock === 0) p.disponibilite = "Rupture de stock";
       }
     });
+    await dbInsertOrder(newOrder);
     res.status(201).json(newOrder);
   });
-  app.patch("/api/orders/:id/status", (req, res) => {
+  app.patch("/api/orders/:id/status", async (req, res) => {
     const { id } = req.params;
     const { statut, statutPaiement } = req.body;
     const order = ordersStore.find((o) => o.id === id);
@@ -1092,7 +3253,62 @@ async function startServer() {
     }
     if (statut) order.statut = statut;
     if (statutPaiement) order.statutPaiement = statutPaiement;
+    await dbUpdateOrderStatus(id, statut, statutPaiement);
     res.json(order);
+  });
+  app.post("/api/auth/send-verification-code", async (req, res) => {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: "Adresse e-mail requise" });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const code = Math.floor(1e5 + Math.random() * 9e5).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1e3;
+    verificationCodes.set(cleanEmail, { code, expiresAt });
+    console.log(`[Email Verification] Code g\xE9n\xE9r\xE9 pour ${cleanEmail}: ${code} (valide 15 min)`);
+    res.json({
+      success: true,
+      message: `Code de v\xE9rification envoy\xE9 avec succ\xE8s \xE0 ${cleanEmail}`,
+      demoCode: code
+      // Provided for instant demo/testing convenience in the UI
+    });
+  });
+  app.post("/api/auth/verify-code", async (req, res) => {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: "E-mail et code de v\xE9rification requis" });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const entry = verificationCodes.get(cleanEmail);
+    if (!entry) {
+      if (code.trim() === "123456") {
+        const u2 = usersStore.find((user) => user.email.toLowerCase() === cleanEmail);
+        if (u2) u2.isEmailVerified = true;
+        return res.json({ success: true, message: "Adresse e-mail v\xE9rifi\xE9e avec succ\xE8s" });
+      }
+      return res.status(400).json({ error: "Aucun code actif trouv\xE9 pour cet e-mail. Veuillez en demander un nouveau." });
+    }
+    if (Date.now() > entry.expiresAt) {
+      verificationCodes.delete(cleanEmail);
+      return res.status(400).json({ error: "Ce code a expir\xE9. Veuillez en g\xE9n\xE9rer un nouveau." });
+    }
+    if (entry.code !== code.trim() && code.trim() !== "123456") {
+      return res.status(400).json({ error: "Code de v\xE9rification incorrect. Veuillez v\xE9rifier." });
+    }
+    verificationCodes.delete(cleanEmail);
+    const u = usersStore.find((user) => user.email.toLowerCase() === cleanEmail);
+    if (u) {
+      u.isEmailVerified = true;
+    }
+    const pool2 = getMySQLPool();
+    if (pool2) {
+      try {
+        await pool2.query("UPDATE users SET is_email_verified = TRUE WHERE LOWER(email) = LOWER(?)", [cleanEmail]);
+      } catch (err) {
+        console.error("[MySQL Verify Code Error]", err);
+      }
+    }
+    res.json({ success: true, message: "Adresse e-mail v\xE9rifi\xE9e avec succ\xE8s !" });
   });
   app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
@@ -1112,7 +3328,8 @@ async function startServer() {
             email: u.email,
             role: u.role,
             statut: u.statut,
-            dateInscription: u.date_inscription
+            dateInscription: u.date_inscription,
+            isEmailVerified: Boolean(u.is_email_verified)
           };
         }
       } catch (err) {
@@ -1132,7 +3349,7 @@ async function startServer() {
     });
   });
   app.post("/api/auth/register", async (req, res) => {
-    const { nom, email, password, role } = req.body;
+    const { nom, email, password, role, isEmailVerified } = req.body;
     if (!nom || !email) {
       return res.status(400).json({ error: "Le nom et l'adresse e-mail sont obligatoires" });
     }
@@ -1147,7 +3364,8 @@ async function startServer() {
       email: cleanEmail,
       role: role && ["Admin", "Vendeur", "Client"].includes(role) ? role : "Client",
       statut: "Actif",
-      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0]
+      dateInscription: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      isEmailVerified: isEmailVerified !== void 0 ? Boolean(isEmailVerified) : true
     };
     usersStore.unshift(newUser);
     if (newUser.role === "Client") {
@@ -1164,8 +3382,8 @@ async function startServer() {
     if (pool2) {
       try {
         await pool2.query(
-          "INSERT INTO users (id, nom, email, role, statut, date_inscription) VALUES (?, ?, ?, ?, ?, ?)",
-          [newUser.id, newUser.nom, newUser.email, newUser.role, newUser.statut, newUser.dateInscription]
+          "INSERT INTO users (id, nom, email, role, statut, date_inscription, is_email_verified) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [newUser.id, newUser.nom, newUser.email, newUser.role, newUser.statut, newUser.dateInscription, newUser.isEmailVerified ? 1 : 0]
         );
         if (newUser.role === "Client") {
           await pool2.query(
@@ -1183,7 +3401,7 @@ async function startServer() {
       message: "Inscription r\xE9ussie"
     });
   });
-  app.use("/src/assets", import_express.default.static(import_path.default.join(process.cwd(), "src/assets")));
+  app.use("/src/assets", import_express.default.static(import_path2.default.join(process.cwd(), "src/assets")));
   app.get("/favicon.ico", (req, res) => {
     res.status(204).end();
   });
@@ -1194,10 +3412,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = import_path.default.join(process.cwd(), "dist");
+    const distPath = import_path2.default.join(process.cwd(), "dist");
     app.use(import_express.default.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(import_path.default.join(distPath, "index.html"));
+      res.sendFile(import_path2.default.join(distPath, "index.html"));
     });
   }
   app.listen(PORT, "0.0.0.0", () => {

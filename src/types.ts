@@ -10,6 +10,7 @@ export interface User {
   role: Role;
   statut: UserStatus;
   dateInscription: string;
+  isEmailVerified?: boolean;
 }
 
 export interface Client {
@@ -97,4 +98,34 @@ export interface DashboardStats {
   chiffreAffairesTotal: number;
   totalCategories: number;
   totalClients: number;
+}
+
+export interface DbTableInfo {
+  tableName: string;
+  rowCount: number;
+  columns: string[];
+  sampleRows: any[];
+}
+
+export interface DbOverview {
+  connected: boolean;
+  mode: 'mysql' | 'in-memory' | 'local-file';
+  config: {
+    host: string;
+    port: number;
+    user: string;
+    database: string;
+  };
+  error?: string;
+  totalRecords: number;
+  tables: DbTableInfo[];
+}
+
+export interface SqlQueryResult {
+  success: boolean;
+  sql: string;
+  rows?: any[];
+  affectedRows?: number;
+  executionTimeMs?: number;
+  error?: string;
 }
