@@ -219,7 +219,7 @@ export const AdminProductsPage: React.FC = () => {
       console.error('Erreur chargement données produits:', err);
       setNotification({
         type: 'error',
-        message: 'Impossible de synchroniser avec la base de données.',
+        message: 'Impossible de synchroniser.',
       });
     } finally {
       setLoading(false);
@@ -251,7 +251,7 @@ export const AdminProductsPage: React.FC = () => {
     } catch (err: any) {
       setTidbInspection({
         loading: false,
-        error: err.message || 'Erreur lors de l\'appel au point de terminaison TiDB Cloud',
+        error: err.message || 'Erreur lors de l\'appel au point de terminaison ',
         data: null,
         latencyMs: 0,
       });
@@ -265,12 +265,12 @@ export const AdminProductsPage: React.FC = () => {
       await loadData();
       setNotification({
         type: 'success',
-        message: `${res.count} produit(s) synchronisé(s) depuis TiDB Cloud (${res.latencyMs} ms) !`,
+        message: `${res.count} produit(s) synchronisé(s) depuis  (${res.latencyMs} ms) !`,
       });
     } catch (err: any) {
       setNotification({
         type: 'error',
-        message: `Synchronisation TiDB Cloud : ${err.message}`,
+        message: `Synchronisation  : ${err.message}`,
       });
     } finally {
       setSyncingTiDB(false);
@@ -408,23 +408,23 @@ export const AdminProductsPage: React.FC = () => {
         await api.updateProduct(editingProduct.id, payload);
         setNotification({
           type: 'success',
-          message: `Le produit "${payload.nom}" a été mis à jour avec succès dans la base de données.`,
+          message: `Le produit "${payload.nom}" a été mis à jour avec succès.`,
         });
       } else {
         // INSERT into Database
         await api.createProduct(payload);
         setNotification({
           type: 'success',
-          message: `Le produit "${payload.nom}" a été inséré avec succès dans la base de données.`,
+          message: `Le produit "${payload.nom}" a été inséré avec succès.`,
         });
       }
       setShowModal(false);
       await loadData();
     } catch (err: any) {
-      console.error('Erreur sauvegarde BDD:', err);
+      console.error('Erreur sauvegarde :', err);
       setNotification({
         type: 'error',
-        message: err.message || "Erreur lors de l'enregistrement en base de données.",
+        message: err.message || "Erreur lors de l'enregistrement.",
       });
     } finally {
       setSaving(false);
@@ -439,15 +439,15 @@ export const AdminProductsPage: React.FC = () => {
       await api.deleteProduct(productToDelete.id);
       setNotification({
         type: 'success',
-        message: `Le produit "${productToDelete.nom}" a été supprimé définitivement de la base de données.`,
+        message: `Le produit "${productToDelete.nom}" a été supprimé définitivement.`,
       });
       setProductToDelete(null);
       await loadData();
     } catch (err: any) {
-      console.error('Erreur suppression BDD:', err);
+      console.error('Erreur suppression :', err);
       setNotification({
         type: 'error',
-        message: err.message || 'Erreur lors de la suppression en base de données.',
+        message: err.message || 'Erreur lors de la suppression.',
       });
     } finally {
       setDeleting(false);
@@ -615,14 +615,14 @@ export const AdminProductsPage: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
-                <th className="p-4">ID BDD</th>
+                <th className="p-4">ID </th>
                 <th className="p-4">Produit</th>
                 <th className="p-4">Marque & Modèle</th>
                 <th className="p-4">Catégorie</th>
                 <th className="p-4 text-right">Prix (€)</th>
                 <th className="p-4 text-center">Stock</th>
                 <th className="p-4">Disponibilité</th>
-                <th className="p-4 text-right">Actions BDD</th>
+                <th className="p-4 text-right">Actions </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
@@ -644,7 +644,7 @@ export const AdminProductsPage: React.FC = () => {
               ) : (
                 filteredProducts.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                    {/* ID BDD */}
+                    {/* ID  */}
                     <td className="p-4">
                       <span className="font-mono text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
                         {p.id}
@@ -664,7 +664,7 @@ export const AdminProductsPage: React.FC = () => {
                           <button
                             onClick={() => handleOpenDetail(p.id)}
                             className="font-bold text-slate-900 hover:text-blue-600 transition text-left line-clamp-1 flex items-center gap-1.5"
-                            title="Cliquer pour voir la fiche BDD"
+                            title="Cliquer pour voir la fiche "
                           >
                             <span>{p.nom}</span>
                           </button>
@@ -774,7 +774,7 @@ export const AdminProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base">
-                    Fiche Produit en Base de Données
+                    Fiche Produit
                   </h3>
                   
                 </div>
@@ -872,7 +872,7 @@ export const AdminProductsPage: React.FC = () => {
                 {detailProduct.caracteristiques && detailProduct.caracteristiques.length > 0 && (
                   <div>
                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                      Caractéristiques Techniques Enregistrées en BDD
+                      Caractéristiques Techniques Enregistrées 
                     </label>
                     <div className="flex flex-wrap gap-1.5">
                       {detailProduct.caracteristiques.map((c, i) => (
@@ -943,12 +943,12 @@ export const AdminProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base">
-                    {editingProduct ? 'Modifier le Produit en BDD' : 'Ajouter un Produit en BDD (INSERT)'}
+                    {editingProduct ? 'Modifier le Produit' : 'Ajouter un Produit'}
                   </h3>
                   <p className="text-[11px] text-slate-400">
                     {editingProduct
                       ? `Mise à jour directe de l'enregistrement ID: ${editingProduct.id}`
-                      : 'Création et persistance immédiate dans la base de données'}
+                      : 'Création et persistance immédiate'}
                   </p>
                 </div>
               </div>
@@ -1275,7 +1275,7 @@ export const AdminProductsPage: React.FC = () => {
                   {saving && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>
                     {saving
-                      ? 'Écriture en BDD...'
+                      ? 'Écriture...'
                       : editingProduct
                       ? 'Enregistrer les Modifications'
                       : 'Ajouter'}
@@ -1297,9 +1297,9 @@ export const AdminProductsPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base">
-                  Supprimer de la Base de Données ?
+                  Supprimer?
                 </h3>
-                <p className="text-[11px] text-slate-400">Action irréversible (DELETE FROM products)</p>
+                <p className="text-[11px] text-slate-400">Action irréversible</p>
               </div>
             </div>
 
@@ -1321,7 +1321,7 @@ export const AdminProductsPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-600">
-              Êtes-vous certain de vouloir supprimer cet enregistrement ? Il sera retiré de la base de données MySQL et du catalogue visible par les clients.
+              Êtes-vous certain de vouloir supprimer cet enregistrement ? Il sera retiré du catalogue visible par les clients.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
@@ -1340,7 +1340,7 @@ export const AdminProductsPage: React.FC = () => {
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-md flex items-center gap-1.5"
               >
                 {deleting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                <span>{deleting ? 'Suppression BDD...' : 'Confirmer la Suppression'}</span>
+                <span>{deleting ? 'Suppression...' : 'Confirmer la Suppression'}</span>
               </button>
             </div>
           </div>
@@ -1359,7 +1359,7 @@ export const AdminProductsPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-base font-extrabold flex items-center gap-2">
-                    <span>TiDB Cloud Data App Endpoint</span>
+                    <span> Data App Endpoint</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
                       Digest Auth
                     </span>
@@ -1387,7 +1387,7 @@ export const AdminProductsPage: React.FC = () => {
                     Requête HTTP & Format Curl (Support ?id=${'{id}'})
                   </span>
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                    Protocole TiDB Cloud
+                    Protocole 
                   </span>
                 </div>
 
@@ -1528,7 +1528,7 @@ export const AdminProductsPage: React.FC = () => {
               {tidbInspection.loading && (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
                   <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-2" />
-                  <div className="text-xs font-bold text-slate-800">Appel au serveur TiDB Cloud en cours...</div>
+                  <div className="text-xs font-bold text-slate-800">Appel au serveur  en cours...</div>
                   <div className="text-[11px] text-slate-400">Authentification Digest challenge en traitement</div>
                 </div>
               )}
@@ -1537,13 +1537,13 @@ export const AdminProductsPage: React.FC = () => {
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-2">
                   <div className="flex items-center gap-2 text-rose-800 font-bold text-xs">
                     <AlertCircle className="w-4 h-4 text-rose-600" />
-                    <span>Réponse du serveur TiDB Cloud :</span>
+                    <span>Réponse du serveur  :</span>
                   </div>
                   <p className="text-xs text-rose-700 font-mono bg-white p-2.5 rounded-xl border border-rose-200 whitespace-pre-wrap">
                     {tidbInspection.error}
                   </p>
                   <p className="text-[11px] text-rose-600">
-                    💡 Pour authentifier vos requêtes réelles avec vos propres identifiants PingCAP TiDB Cloud, renseignez <code className="font-bold">TIDB_PUBLIC_KEY</code> et <code className="font-bold">TIDB_PRIVATE_KEY</code> dans les paramètres de secrets.
+                    💡 Pour authentifier vos requêtes réelles avec vos propres identifiants PingCAP , renseignez <code className="font-bold">TIDB_PUBLIC_KEY</code> et <code className="font-bold">TIDB_PRIVATE_KEY</code> dans les paramètres de secrets.
                   </p>
                 </div>
               )}
