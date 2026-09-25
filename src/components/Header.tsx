@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
                   id="header-admin-link"
                   className="ml-2 px-2 py-0.5 rounded bg-orange-600 hover:bg-orange-500 text-white font-medium text-xs flex items-center gap-1 transition"
                 >
-                  <span>En cours</span>
+                  <span>En création</span>
                 </button>
             </span>
           </div>
